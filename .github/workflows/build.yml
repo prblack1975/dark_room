@@ -79,9 +79,9 @@ jobs:
           name: android-aab
           path: build/app/outputs/bundle/release/app-release.aab
 
-  # iOS Build
+  # iOS Build  
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -96,7 +96,13 @@ jobs:
         run: flutter pub get
       
       - name: Build iOS (no signing)
-        run: flutter build ios --release --no-codesign
+        run: |
+          # List available iOS SDKs
+          xcodebuild -showsdks | grep iphoneos
+          # List available devices/simulators
+          xcrun simctl list devices available
+          # Build with explicit iOS SDK version that's available
+          flutter build ios --release --no-codesign
       
       - name: Create iOS Archive
         run: |
@@ -111,7 +117,7 @@ jobs:
 
   # macOS Build
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
