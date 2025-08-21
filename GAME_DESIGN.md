@@ -8,11 +8,12 @@ Dark Room is an audio-centric escape room game where players navigate completely
 - **Platform**: Cross-platform (iOS, Android, Desktop, Web)
 - **Target Audience**: Players seeking unique sensory gaming experiences, accessibility-focused gamers
 - **Core Loop**: Explore → Discover → Collect → Escape
+- **Game Structure**: Level-based progression with self-contained challenges
 
 ## Visual Design Philosophy
 The game embraces complete visual deprivation as a core mechanic:
 - **Primary Screen**: Completely black during gameplay
-- **UI Elements**: Minimal HUD showing only health, inventory, and navigation controls
+- **UI Elements**: Minimal HUD showing only health, inventory, and navigation controls. These should be in a dark grey, almost not visible. Health and inventory are configurable.
 - **Menu/Progress Screens**: Traditional visual interfaces between levels
 
 ## Gameplay Mechanics
@@ -40,17 +41,21 @@ The game embraces complete visual deprivation as a core mechanic:
   - **NPC Audio**: Breathing, footsteps, vocalizations
   - **Feedback**: Collision sounds, inventory notifications
   - **Narration**: Character voice describing found items
+  - **Health Artifacts**: Distinctive audio signatures for healing items
 
 ### Collision & Physics
-- **Wall Detection**: Audio/haptic feedback when hitting boundaries
+- **Wall Detection**: Audio/haptic feedback when hitting boundaries. When about to hit the wall, sound gets extra echo-y
 - **Material-Specific Sounds**: Different collision sounds for various surfaces
 - **Obstacle Navigation**: Objects block movement but provide audio landmarks
 
 ### Inventory System
+- **No Carry Limits**: Players can pick up all available items in a level without capacity restrictions
+- **Level Item Design**: Each level contains only a few carefully placed items (typically 1-3 items per level)
 - **Pickup Mechanism**: Touch/interact with objects to collect
 - **Item Discovery**: Voice narration + text description of found items
 - **Inventory Display**: Listed in HUD, accessible during gameplay
 - **Item Usage**: Context-sensitive use of collected items
+- **Level-Specific Items**: Items do not carry between levels - each level is self-contained
 
 ### Level Objectives
 1. **Basic Escape**: Find and reach the exit door
@@ -75,10 +80,12 @@ The game embraces complete visual deprivation as a core mechanic:
   - *Audio Signature*: Low rumbling, mechanical grinding
 - **Monaural**: Causes complete hearing loss in one ear (stereo), slowly returns, damage over time
   - *Audio Signature*: Sharp clicking sounds, alternating left/right
-- **Thief**: Steals random inventory items on contact, causes minor damage
+- **Thief**: Steals random inventory items on contact, causes minor damage. Runs away and hides items.
   - *Audio Signature*: Quick scurrying sounds, metallic jingling
 - **Stunner**: Temporarily stuns and relocates player to random location, minor damage
   - *Audio Signature*: Electric buzzing, crackling sounds
+- **Silencer**: Just makes all sound go quiet the closer to the NPC. No damage to player
+    - *Audio Signature*: No audio
 
 ### NPC Mechanics
 - **AI States**: Patrolling, Investigating, Hunting, Attacking
@@ -86,8 +93,10 @@ The game embraces complete visual deprivation as a core mechanic:
   - Player movement noise
   - Collision sounds
   - Time-based proximity detection
+  - Some NPCs can see, possibly limited sight range
 - **Audio Signatures**: Each NPC type has unique sound profile
 - **Behavior Variance**: Randomized elements prevent pattern memorization
+- **Effect Duration**: Status effects from NPCs last approximately 10 seconds before recovery begins
 
 ### Player-NPC Interaction
 - **Stealth System**: Player movement speed affects noise generation
@@ -102,8 +111,8 @@ The game embraces complete visual deprivation as a core mechanic:
     - Stunner (relocation + brief stun)
 - **Evasion Options**: Hiding spots, misdirection, temporary concealment
 - **Recovery Mechanics**: 
-  - Hearing effects have distinct recovery patterns per NPC type
-  - Health regenerates slowly over time
+  - Hearing effects have distinct recovery patterns per NPC type (approximately 10 seconds duration)
+  - Health does not regenerate over time - only special artifacts can restore health instantly
   - Lost items from Thief are gone permanently (unless found again)
 
 ## Level Design Framework
@@ -118,13 +127,15 @@ The game embraces complete visual deprivation as a core mechanic:
 
 ### Room Generation
 - **Layout Complexity**: From simple rectangular rooms to complex mazes
-- **Object Density**: Increasing number of interactive elements
+- **Minimal Item Design**: Each level contains only essential items (1-3 items typically)
+- **Strategic Item Placement**: Items positioned to guide exploration and puzzle-solving
 - **Audio Landmarks**: Strategic placement of sound-generating objects
 - **Environmental Storytelling**: Room contents suggest narrative context
+- **Health Artifacts**: Rare healing items placed strategically for difficulty balance
 
 ## User Interface Design
 
-### In-Game HUD (Always Visible)
+### In-Game HUD (Visible based on configuration)
 - **Health Indicator**: Visual health bar or numerical display
 - **Inventory List**: Text-based item listing
 - **Navigation Controls**: Virtual controls for mobile platforms
@@ -134,12 +145,6 @@ The game embraces complete visual deprivation as a core mechanic:
 - **Level Select**: Traditional visual interface showing progress
 - **Statistics Screen**: Post-level completion stats
 - **Settings**: Audio settings, control customization, accessibility options
-
-### Accessibility Features
-- **Text-to-Speech**: All UI text readable by screen readers
-- **Haptic Feedback**: Controller/mobile vibration for collision and events
-- **Audio Settings**: Volume balancing, frequency adjustments
-- **Control Remapping**: Customizable input schemes
 
 ## Technical Architecture
 
@@ -156,12 +161,19 @@ The game embraces complete visual deprivation as a core mechanic:
 
 ## Progression & Retention
 
+### Save System
+- **Level-Based Saves**: Only level completion and related statistics are saved
+- **No Persistent Inventory**: Items do not carry between levels
+- **Session Continuity**: Players can resume mid-level if interrupted
+- **Statistics Tracking**: Comprehensive performance data saved per level
+
 ### Level Completion Stats
 - **Time to Complete**: Speed-running potential
 - **Damage Taken**: Health management skill
 - **Items Found**: Exploration thoroughness
 - **Detection Events**: Stealth performance
 - **Efficiency Rating**: Overall performance score
+- **Health Artifacts Used**: Tracking of healing item usage
 
 ### Progression Rewards
 - **Level Unlocks**: Sequential level access
@@ -195,14 +207,17 @@ The game embraces complete visual deprivation as a core mechanic:
 - User experience refinement
 - Performance optimization
 
-## Open Design Questions
+## Future Development Considerations
 
-1. **Inventory Limits**: Should carrying capacity be limited?
-2. **Save System**: Level-based vs. checkpoint saves?
-3. **Multiplayer**: Potential for cooperative gameplay?
-4. **Hearing Loss Duration**: How long should Disruptor effects last?
-5. **Health Regeneration**: Should health regenerate automatically or require items?
-6. **Long-Range Objects**: Which specific objects should be audible across entire room?
+### Multiplayer Vision
+- **Cooperative Mode**: Planned future implementation allowing 2-4 players to collaborate
+- **Shared Audio Space**: Multiple players navigating the same dark environment
+- **Communication Challenges**: Limited voice chat or proximity-based communication
+- **Collaborative Puzzles**: Multi-player specific objectives requiring coordination
+- **Architecture Preparation**: Current single-player design considers future multiplayer expansion
+
+### Remaining Design Questions
+1. **Long-Range Objects**: Which specific objects should be audible across entire room?
 
 ## Success Metrics
 - **Player Retention**: Level completion rates
