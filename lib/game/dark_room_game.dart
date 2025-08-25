@@ -7,6 +7,7 @@ import 'components/stable_debug_overlay.dart';
 import 'components/wall_occlusion_debug.dart';
 import 'components/pickup_debug_overlay.dart';
 import 'levels/level.dart';
+import 'levels/menu_level.dart';
 import 'levels/tutorial_level.dart';
 import 'levels/escape_room_level.dart';
 import 'levels/laboratory_level.dart';
@@ -70,6 +71,10 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     // Mark as initialized
     _isInitialized = true;
     print('🎮 GAME: DarkRoomGame initialization completed');
+    
+    // Load default MenuLevel
+    await loadLevel(MenuLevel());
+    print('🎮 GAME: MenuLevel loaded as default level');
   }
   
   Future<void> loadLevel(Level level) async {

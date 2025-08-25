@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dark_room/game/dark_room_game.dart';
-import 'package:dark_room/game/components/player.dart';
 import 'package:dark_room/game/levels/menu_level.dart';
 
 void main() {
@@ -15,7 +14,8 @@ void main() {
       'game initializes and player can be moved',
       () => DarkRoomGame(),
       (game) async {
-        final player = game.player;
+        await game.ready();
+        final player = game.player!;
         final initialPosition = player.position.clone();
         
         // Apply movement input
@@ -53,9 +53,10 @@ void main() {
       'game starts with menu level',
       () => DarkRoomGame(),
       (game) async {
+        await game.ready();
         expect(game.currentLevel, isA<MenuLevel>());
         expect(game.player, isNotNull);
-        expect(game.player.position, equals(Vector2(400, 300)));
+        expect(game.player!.position, equals(Vector2(400, 300)));
       },
     );
 

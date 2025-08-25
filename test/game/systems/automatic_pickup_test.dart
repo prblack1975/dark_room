@@ -4,7 +4,6 @@ import 'package:flame/components.dart';
 import 'package:dark_room/game/dark_room_game.dart';
 import 'package:dark_room/game/levels/tutorial_level.dart';
 import 'package:dark_room/game/components/game_object.dart';
-import 'package:dark_room/game/components/player.dart';
 import 'package:dark_room/game/systems/inventory_system.dart';
 
 void main() {
@@ -26,7 +25,7 @@ void main() {
       await game.ready();
       
       // Get player and inventory system
-      final player = game.player;
+      final player = game.player!;
       final inventorySystem = level.inventorySystem;
       
       // Find the rusty key item in the tutorial level
@@ -66,7 +65,7 @@ void main() {
       await game.ready();
       
       // Get components
-      final player = game.player;
+      final player = game.player!;
       final inventorySystem = level.inventorySystem;
       
       // Find the rusty key
@@ -101,7 +100,7 @@ void main() {
       await game.ready();
       
       // Get components
-      final player = game.player;
+      final player = game.player!;
       final inventorySystem = level.inventorySystem;
       
       // Find the rusty key
@@ -141,7 +140,7 @@ void main() {
       await game.ready();
       
       // Get components
-      final player = game.player;
+      final player = game.player!;
       final inventorySystem = level.inventorySystem;
       
       // Find the door and key

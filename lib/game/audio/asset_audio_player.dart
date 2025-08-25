@@ -8,6 +8,7 @@ class AssetAudioPlayer {
 
   final Map<String, AudioPlayer> _players = {};
   final List<AudioPlayer> _collisionPlayers = []; // Multiple collision sound players
+  final Map<String, AudioPlayer> _continuousPlayers = {}; // Continuous looping sounds
   int _currentCollisionPlayer = 0;
   bool _isInitialized = false;
 
@@ -59,6 +60,56 @@ class AssetAudioPlayer {
     
     _isInitialized = true;
     print('✅ Asset audio system ready!');
+  }
+
+  // Continuous sound methods
+  Future<void> startContinuousSound(String soundName, String assetPath) async {
+    try {
+      await _initialize();
+      
+      // Don't recreate if already playing
+      if (_continuousPlayers.containsKey(soundName)) {
+        return;
+      }
+      
+      final player = AudioPlayer();
+      await player.setSource(AssetSource(assetPath));
+      await player.setReleaseMode(ReleaseMode.loop);
+      await player.setVolume(0.0); // Start silent
+      await player.resume(); // Start playing
+      
+      _continuousPlayers[soundName] = player;
+      print('🔊 DEBUG: Started continuous audio playback for $soundName');
+    } catch (e) {
+      print('❌ Failed to start continuous sound $soundName: $e');
+    }
+  }
+
+  Future<void> setContinuousSoundVolume(String soundName, double volume) async {
+    try {
+      final player = _continuousPlayers[soundName];
+      if (player != null) {
+        final clampedVolume = volume.clamp(0.0, 1.0);
+        await player.setVolume(clampedVolume);
+        print('🔊 DEBUG: Set $soundName volume to ${(clampedVolume * 100).toInt()}%');
+      }
+    } catch (e) {
+      print('❌ Failed to set volume for $soundName: $e');
+    }
+  }
+
+  void stopContinuousSound(String soundName) {
+    try {
+      final player = _continuousPlayers[soundName];
+      if (player != null) {
+        player.stop();
+        player.dispose();
+        _continuousPlayers.remove(soundName);
+        print('🔊 DEBUG: Stopped continuous sound $soundName');
+      }
+    } catch (e) {
+      print('❌ Failed to stop continuous sound $soundName: $e');
+    }
   }
 
   Future<void> _playSound(String soundName, {double volume = 0.5}) async {
@@ -156,6 +207,9 @@ class AssetAudioPlayer {
     for (final player in _collisionPlayers) {
       player.stop();
     }
+    for (final player in _continuousPlayers.values) {
+      player.stop();
+    }
   }
 
   void dispose() {
@@ -168,5 +222,10 @@ class AssetAudioPlayer {
       player.dispose();
     }
     _collisionPlayers.clear();
+    
+    for (final player in _continuousPlayers.values) {
+      player.dispose();
+    }
+    _continuousPlayers.clear();
   }
 }

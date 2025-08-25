@@ -165,11 +165,11 @@ class LineIntersection {
     
     final wallCount = uniqueWalls.length;
     
-    // Each wall reduces volume exponentially
-    // 1 wall = ~50% reduction, 2 walls = ~75% reduction, 3+ walls = ~87%+ reduction
-    final occlusionStrength = 1.0 - math.pow(0.5, wallCount.toDouble());
+    // Less aggressive occlusion formula
+    // 1 wall = ~30% reduction, 2 walls = ~50% reduction, 3+ walls = ~70%+ reduction
+    final occlusionStrength = 1.0 - math.pow(0.7, wallCount.toDouble());
     
-    return occlusionStrength.clamp(0.0, 0.9); // Cap at 90% to avoid complete silence
+    return occlusionStrength.clamp(0.0, 0.75); // Cap at 75% to ensure some audibility
   }
   
   /// Calculate muffling effect strength for low-pass filtering simulation
@@ -179,10 +179,10 @@ class LineIntersection {
       return 0.0; // No muffling needed
     }
     
-    // Muffling is stronger than just volume reduction
+    // Less aggressive muffling - reduce impact
     final wallCount = intersections.length;
-    final mufflingStrength = math.min(wallCount * 0.3, 0.8);
+    final mufflingStrength = math.min(wallCount * 0.2, 0.6);
     
-    return mufflingStrength.clamp(0.0, 0.8);
+    return mufflingStrength.clamp(0.0, 0.6);
   }
 }

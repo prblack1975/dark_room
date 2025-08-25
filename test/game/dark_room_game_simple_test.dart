@@ -37,7 +37,7 @@ void main() {
       () => DarkRoomGame(),
       (game) async {
         await game.ready();
-        final player = game.player;
+        final player = game.player!;
         expect(player.position, equals(Vector2(400, 300)));
       },
     );
@@ -117,7 +117,7 @@ void main() {
       () => DarkRoomGame(),
       (game) async {
         await game.ready();
-        expect(game.currentLevel.children.contains(game.player), isTrue);
+        expect(game.currentLevel!.children.contains(game.player), isTrue);
       },
     );
   });

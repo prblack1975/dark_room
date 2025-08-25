@@ -65,37 +65,47 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   }
   
   Future<void> initializeSoundSources() async {
-    final audioManager = AudioManager();
-    final objectsWithSound = children.whereType<GameObject>()
-        .where((obj) => obj.soundFile != null);
-    
-    print('🔊 DEBUG: Initializing ${objectsWithSound.length} sound sources for level: $name');
-    
-    if (objectsWithSound.isEmpty) {
-      print('⚠️ DEBUG: No sound sources found in level');
-      return;
-    }
-    
-    for (final soundObject in objectsWithSound) {
-      if (soundObject.soundFile != null) {
-        final loop = soundObject.type == GameObjectType.soundSource;
-        
-        // Preload the sound
-        await audioManager.preloadSound(
-          soundObject.soundFile!,
-          'audio/interaction/${soundObject.soundFile!}',
-          loop: loop,
-        );
-        
-        // Immediately start continuous playback for sound sources
-        if (soundObject.type == GameObjectType.soundSource) {
-          await audioManager.startContinuousSound(soundObject.soundFile!);
-          print('🔊 DEBUG: Started continuous playback for ${soundObject.soundFile!} at position ${soundObject.position}');
+    try {
+      final audioManager = AudioManager();
+      final objectsWithSound = children.whereType<GameObject>()
+          .where((obj) => obj.soundFile != null);
+      
+      print('🔊 DEBUG: Initializing ${objectsWithSound.length} sound sources for level: $name');
+      
+      if (objectsWithSound.isEmpty) {
+        print('⚠️ DEBUG: No sound sources found in level');
+        return;
+      }
+      
+      for (final soundObject in objectsWithSound) {
+        if (soundObject.soundFile != null) {
+          try {
+            final loop = soundObject.type == GameObjectType.soundSource;
+            
+            // Preload the sound
+            await audioManager.preloadSound(
+              soundObject.soundFile!,
+              'audio/interaction/${soundObject.soundFile!}',
+              loop: loop,
+            );
+            
+            // Immediately start continuous playback for sound sources
+            if (soundObject.type == GameObjectType.soundSource) {
+              await audioManager.startContinuousSound(soundObject.soundFile!);
+              print('🔊 DEBUG: Started continuous playback for ${soundObject.soundFile!} at position ${soundObject.position}');
+            }
+          } catch (e) {
+            print('⚠️ DEBUG: Failed to initialize sound ${soundObject.soundFile!}: $e');
+            // Continue with other sounds even if this one fails
+          }
         }
       }
+      
+      print('🔊 DEBUG: All sound sources initialized and playing for level: $name');
+    } catch (e) {
+      print('⚠️ DEBUG: Failed to initialize sound sources for level $name: $e');
+      // Level can continue without audio in test environments
     }
-    
-    print('🔊 DEBUG: All sound sources initialized and playing for level: $name');
   }
   
   // Override this to build the level
