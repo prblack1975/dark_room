@@ -6,9 +6,19 @@ import '../utils/line_intersection.dart';
 import 'asset_audio_player.dart';
 
 class AudioManager {
+  static AudioManager? _testInstance;
   static final AudioManager _instance = AudioManager._internal();
-  factory AudioManager() => _instance;
+  
+  factory AudioManager() => _testInstance ?? _instance;
   AudioManager._internal();
+  
+  /// Set a test instance (used during testing to inject mocks)
+  static void setTestInstance(AudioManager? testInstance) {
+    _testInstance = testInstance;
+  }
+  
+  /// Check if running in test mode
+  bool get isTestMode => _testInstance != null;
 
   final Map<String, AudioPlayer?> _players = {};  // Allow null players for failed loads
   final Map<String, bool> _isLooping = {};
@@ -24,6 +34,13 @@ class AudioManager {
   static const double maxVolume = 1.0;
 
   Future<void> preloadSound(String soundName, String assetPath, {bool loop = false}) async {
+    // In test mode, just register the sound without trying to load audio
+    if (isTestMode) {
+      _players[soundName] = null;
+      _isLooping[soundName] = loop;
+      return;
+    }
+    
     try {
       // Try to create AudioPlayer - this can throw synchronous exceptions
       AudioPlayer? player;
@@ -189,6 +206,12 @@ class AudioManager {
       _currentVolumes[soundName] = 0.0;
       print('🔊 DEBUG: Started continuous playback for $soundName');
       
+      // Skip actual audio playback in test mode
+      if (isTestMode) {
+        print('🔊 DEBUG: Test mode - skipping actual audio playback for $soundName');
+        return;
+      }
+      
       // Use the working AssetAudioPlayer instead of the broken AudioPlayer
       try {
         final assetPath = 'audio/interaction/$soundName';
@@ -327,6 +350,11 @@ class AudioManager {
     
     // Always update the volume state for game logic, regardless of player availability
     _currentVolumes[soundName] = clampedVolume;
+    
+    // Skip actual volume setting in test mode
+    if (isTestMode) {
+      return;
+    }
     
     // Try to use AssetAudioPlayer for continuous sounds first
     try {

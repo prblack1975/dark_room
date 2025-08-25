@@ -71,6 +71,48 @@ The project follows standard Flutter application structure with Flame game engin
 - **Automatic Door Unlocking**: Doors automatically unlock when the player approaches with the required key in inventory.
 - **NO Manual Activation**: Never implement manual interaction systems (like pressing buttons to activate sounds). All audio interaction is automatic and proximity-based.
 
+## Testing Guidelines
+
+**CRITICAL**: To prevent the test/implementation cycle that breaks game functionality:
+
+### Audio Testing Approach
+- **NEVER disable audio calls in the implementation** - this breaks actual gameplay
+- **USE proper mocking instead** - Audio systems have built-in test detection
+- **AudioManager and AssetAudioPlayer** automatically use test mode when `TestAudioSetup.setupTestEnvironment()` is called
+- **Test the game logic** (distance calculations, pickup radius, inventory updates) **NOT audio playback**
+
+### Test Setup Pattern
+```dart
+import '../../helpers/test_setup.dart';
+
+void main() {
+  setUpAll(() {
+    TestAudioSetup.setupTestEnvironment(); // Enables test mode for all audio
+  });
+  
+  tearDownAll(() {
+    TestAudioSetup.resetMocks();
+  });
+}
+```
+
+### What to Test vs Mock
+- **✅ TEST**: Volume calculations, distance logic, pickup radius, inventory state changes, game object interactions
+- **🚫 MOCK**: AudioPlayer creation, actual audio playback, file loading, platform-specific audio calls
+- **✅ VERIFY**: Game logic works correctly, state changes properly, systems integrate correctly
+
+### Running Tests
+- `flutter test` - All tests with proper audio mocking
+- `flutter analyze` - Static analysis and linting
+- **Manual verification**: Always run the actual game to verify audio and pickup functionality
+
+### Debugging Test Issues
+- If tests fail with `MissingPluginException`: Audio mocking not set up correctly
+- If pickup doesn't work in game but tests pass: Implementation was modified to "fix" tests
+- If audio doesn't work in game: Check that test mode detection isn't enabled in production
+
+**Remember**: The game functionality (audio, pickup, proximity) should always work perfectly. Tests should validate logic without interfering with actual gameplay.
+
 ## Key Configuration
 
 - **Dart SDK**: ^3.8.1

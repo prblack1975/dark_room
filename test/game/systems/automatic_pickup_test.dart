@@ -5,11 +5,16 @@ import 'package:dark_room/game/dark_room_game.dart';
 import 'package:dark_room/game/levels/tutorial_level.dart';
 import 'package:dark_room/game/components/game_object.dart';
 import 'package:dark_room/game/systems/inventory_system.dart';
+import '../../helpers/test_setup.dart';
 
 void main() {
   // Initialize bindings for audio tests
   setUpAll(() {
-    TestWidgetsFlutterBinding.ensureInitialized();
+    TestAudioSetup.setupTestEnvironment();
+  });
+  
+  tearDownAll(() {
+    TestAudioSetup.resetMocks();
   });
 
   group('Automatic Pickup System Tests', () {
@@ -26,10 +31,15 @@ void main() {
       
       // Get player and inventory system
       final player = game.player!;
-      final inventorySystem = level.inventorySystem;
       
-      // Find the rusty key item in the tutorial level
-      final rustyKey = level.children
+      // Get the active inventory system from the current level (not the tutorial level instance)
+      // The game loads multiple levels, we need the currently active one
+      final currentLevel = game.currentLevel;
+      expect(currentLevel, isNotNull, reason: 'Game should have a current level');
+      final inventorySystem = currentLevel!.inventorySystem;
+      
+      // Find the rusty key item in the current level
+      final rustyKey = currentLevel.children
           .whereType<GameObject>()
           .where((obj) => obj.type == GameObjectType.item && obj.name == 'rusty_key')
           .firstOrNull;
@@ -66,10 +76,14 @@ void main() {
       
       // Get components
       final player = game.player!;
-      final inventorySystem = level.inventorySystem;
+      
+      // Get the active inventory system from the current level
+      final currentLevel = game.currentLevel;
+      expect(currentLevel, isNotNull, reason: 'Game should have a current level');
+      final inventorySystem = currentLevel!.inventorySystem;
       
       // Find the rusty key
-      final rustyKey = level.children
+      final rustyKey = currentLevel.children
           .whereType<GameObject>()
           .where((obj) => obj.type == GameObjectType.item && obj.name == 'rusty_key')
           .firstOrNull;
@@ -101,10 +115,14 @@ void main() {
       
       // Get components
       final player = game.player!;
-      final inventorySystem = level.inventorySystem;
+      
+      // Get the active inventory system from the current level
+      final currentLevel = game.currentLevel;
+      expect(currentLevel, isNotNull, reason: 'Game should have a current level');
+      final inventorySystem = currentLevel!.inventorySystem;
       
       // Find the rusty key
-      final rustyKey = level.children
+      final rustyKey = currentLevel.children
           .whereType<GameObject>()
           .where((obj) => obj.type == GameObjectType.item && obj.name == 'rusty_key')
           .firstOrNull;
@@ -141,15 +159,19 @@ void main() {
       
       // Get components
       final player = game.player!;
-      final inventorySystem = level.inventorySystem;
+      
+      // Get the active inventory system from the current level
+      final currentLevel = game.currentLevel;
+      expect(currentLevel, isNotNull, reason: 'Game should have a current level');
+      final inventorySystem = currentLevel!.inventorySystem;
       
       // Find the door and key
-      final door = level.children
+      final door = currentLevel.children
           .whereType<GameObject>()
           .where((obj) => obj.type == GameObjectType.door && obj.name == 'exit_door')
           .firstOrNull;
       
-      final rustyKey = level.children
+      final rustyKey = currentLevel.children
           .whereType<GameObject>()
           .where((obj) => obj.type == GameObjectType.item && obj.name == 'rusty_key')
           .firstOrNull;

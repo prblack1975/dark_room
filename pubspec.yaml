@@ -58,6 +58,10 @@ dev_dependencies:
   
   # Flame testing utilities
   flame_test: ^1.12.0
+  
+  # Testing and mocking dependencies
+  mockito: ^5.4.4
+  build_runner: ^2.4.9
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

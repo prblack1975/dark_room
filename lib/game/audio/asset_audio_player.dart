@@ -2,9 +2,19 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 
 class AssetAudioPlayer {
+  static AssetAudioPlayer? _testInstance;
   static final AssetAudioPlayer _instance = AssetAudioPlayer._internal();
-  factory AssetAudioPlayer() => _instance;
+  
+  factory AssetAudioPlayer() => _testInstance ?? _instance;
   AssetAudioPlayer._internal();
+  
+  /// Set a test instance (used during testing to inject mocks)
+  static void setTestInstance(AssetAudioPlayer? testInstance) {
+    _testInstance = testInstance;
+  }
+  
+  /// Check if running in test mode
+  bool get isTestMode => _testInstance != null;
 
   final Map<String, AudioPlayer> _players = {};
   final List<AudioPlayer> _collisionPlayers = []; // Multiple collision sound players
@@ -14,6 +24,12 @@ class AssetAudioPlayer {
 
   Future<void> _initializePlayer(String soundName, String assetPath) async {
     if (_players.containsKey(soundName)) return;
+    
+    // In test mode, just register the sound without loading
+    if (isTestMode) {
+      print('🧪 TEST: Registered audio $soundName (test mode)');
+      return;
+    }
     
     try {
       final player = AudioPlayer();
@@ -113,6 +129,12 @@ class AssetAudioPlayer {
   }
 
   Future<void> _playSound(String soundName, {double volume = 0.5}) async {
+    // In test mode, just log the sound play attempt without actual audio
+    if (isTestMode) {
+      print('🧪 TEST: Would play $soundName at ${(volume * 100).toInt()}% volume');
+      return;
+    }
+    
     try {
       await _initialize();
       
