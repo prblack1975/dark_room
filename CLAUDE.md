@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL: Pre-Push Validation Required
+
+**IMPORTANT**: Before any git push operations, Claude MUST run the pre-checkin validation script and ensure all checks pass:
+
+```bash
+./scripts/pre-checkin.sh --quick
+```
+
+**Push operations are FORBIDDEN if:**
+- Pre-checkin script fails (exit code != 0)
+- Any tests fail
+- Build verification fails
+- Code analysis shows errors
+
+**Only proceed with push if the pre-checkin script reports: "🎉 All checks passed! Your code is ready for commit."**
+
+For time-sensitive situations, use the quick mode, but for major changes, run full validation:
+```bash
+./scripts/pre-checkin.sh  # Full validation for important changes
+```
+
 ## Project Overview
 
 This is a Flame game application built with Flutter called "dark_room". Flame is a game engine built on top of Flutter for creating 2D games. The project targets iOS, Android, Linux, macOS, Windows, and Web platforms.
@@ -14,8 +35,34 @@ This is a Flame game application built with Flutter called "dark_room". Flame is
 - `flutter run -d macos` - Run on macOS
 - `flutter run -d ios` - Run on iOS simulator
 
-### Building
-- `flutter build apk` - Build Android APK
+### Local Build System (Recommended)
+The project uses a comprehensive local build system that replaces GitHub Actions:
+
+- `./scripts/check-build-env.sh` - Validate build environment and dependencies
+- `./scripts/build-all.sh` - Build all platforms with orchestration
+- `./scripts/build-android.sh` - Build Android APK and AAB
+- `./scripts/build-ios.sh` - Build iOS app (requires macOS)
+- `./scripts/build-web.sh` - Build web version with deployment optimization
+- `./scripts/build-desktop.sh` - Build desktop platforms (Windows, macOS, Linux)
+- `./scripts/deploy.sh` - Full deployment pipeline (web + releases)
+- `./scripts/deploy-web.sh` - Deploy web version to GitHub Pages
+- `./scripts/release-manager.sh` - Create GitHub releases with all assets
+
+**See [BUILD_GUIDE.md](BUILD_GUIDE.md) for comprehensive build instructions.**
+
+### Pre-Checkin Validation
+- `./scripts/pre-checkin.sh` - Complete validation (tests + builds) before commit
+- `./scripts/pre-checkin.sh --quick` - Quick validation (web + Android only)
+- `./scripts/pre-checkin.sh --skip-builds` - Tests and analysis only (no builds)
+
+### Quick Build Commands
+- `./scripts/build-all.sh --parallel` - Build all platforms in parallel (fastest)
+- `./scripts/build-all.sh --platforms=web,android` - Build specific platforms
+- `./scripts/deploy.sh` - Build and deploy everything
+- `./scripts/deploy.sh --web-only` - Deploy web version only
+
+### Flutter Commands (Direct)
+- `flutter build apk` - Build Android APK (use scripts for better integration)
 - `flutter build ios` - Build iOS app
 - `flutter build web` - Build for web deployment
 - `flutter build macos` - Build macOS app
@@ -24,8 +71,8 @@ This is a Flame game application built with Flutter called "dark_room". Flame is
 
 ### Testing & Analysis
 - `flutter test` - Run all tests
-- `flutter test test/widget_test.dart` - Run specific test file
 - `flutter analyze` - Run static analysis and linting
+- `./scripts/version-manager.sh current` - Show current version info
 
 ### Dependencies
 - `flutter pub get` - Install dependencies
@@ -35,6 +82,7 @@ This is a Flame game application built with Flutter called "dark_room". Flame is
 ### Development Tools
 - `flutter doctor` - Check Flutter environment setup
 - `flutter clean` - Clean build artifacts
+- `./scripts/artifact-manager.sh clean` - Clean all build artifacts and caches
 
 ## Code Architecture
 
@@ -113,8 +161,79 @@ void main() {
 
 **Remember**: The game functionality (audio, pickup, proximity) should always work perfectly. Tests should validate logic without interfering with actual gameplay.
 
+## Git Workflow and Commit Process
+
+### Before Any Commit or Push
+1. **ALWAYS run pre-checkin validation:**
+   ```bash
+   ./scripts/pre-checkin.sh --quick  # For regular changes
+   ./scripts/pre-checkin.sh          # For major changes
+   ```
+
+2. **Required validation steps that must pass:**
+   - Environment and dependency checks
+   - Git repository status validation  
+   - Flutter analyze with zero errors
+   - All tests must pass with coverage
+   - Build verification for target platforms
+   - Artifact validation and integrity
+
+3. **Only proceed with git operations if you see:**
+   ```
+   🎉 All checks passed! Your code is ready for commit.
+   ```
+
+### Commit Message Guidelines
+- Use conventional commit format: `type(scope): description`
+- Examples:
+  - `feat(audio): add wall occlusion for spatial audio`
+  - `fix(player): resolve collision detection edge case`
+  - `test(inventory): add pickup radius validation tests`
+  - `docs(readme): update build instructions`
+
+### Push Safety Protocol
+- **NEVER push without running pre-checkin validation**
+- If pre-checkin fails, fix issues before attempting push
+- For build failures, check `dist/logs/` for detailed error messages
+- For test failures, run `flutter test` individually to debug
+
 ## Key Configuration
 
 - **Dart SDK**: ^3.8.1
 - **Linting**: Uses flutter_lints package for code quality
 - **Package name**: com.haggoth.dark_room (Android/iOS)
+- **Pre-checkin**: MANDATORY before any push operations
+
+## 🚨 CRITICAL WORKFLOW ENFORCEMENT 🚨
+
+**FOR CLAUDE CODE: The following rules are MANDATORY and must be followed exactly:**
+
+### Pre-Push Validation Protocol
+1. **BEFORE any `git push` command, you MUST run:**
+   ```bash
+   ./scripts/pre-checkin.sh --quick
+   ```
+
+2. **PUSH IS FORBIDDEN unless you see exactly this message:**
+   ```
+   🎉 All checks passed! Your code is ready for commit.
+   ```
+
+3. **If pre-checkin fails:**
+   - DO NOT attempt to push
+   - Fix all reported issues first
+   - Re-run pre-checkin validation
+   - Only push after successful validation
+
+4. **For major changes, use full validation:**
+   ```bash
+   ./scripts/pre-checkin.sh
+   ```
+
+### Validation Failure Response
+- **Test failures**: Run `flutter test` to debug, fix issues
+- **Build failures**: Check `dist/logs/` for detailed error messages
+- **Code analysis errors**: Run `flutter analyze` and fix all issues
+- **Environment issues**: Run `./scripts/check-build-env.sh --fix`
+
+**This protocol ensures code quality and prevents broken builds from being pushed to the repository.**

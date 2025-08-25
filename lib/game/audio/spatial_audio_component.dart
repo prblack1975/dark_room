@@ -64,10 +64,7 @@ class SpatialAudioComponent extends Component {
       Vector2 soundPosition;
       if (parent is PositionComponent) {
         soundPosition = (parent as PositionComponent).position.clone();
-        // Add size offset to get center position if parent has size
-        if (parent is SizeProvider) {
-          soundPosition += (parent as SizeProvider).size / 2;
-        }
+        // Use position as-is (no size offset for now)
       } else {
         soundPosition = Vector2.zero();
       }
