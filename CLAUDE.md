@@ -56,6 +56,21 @@ The project follows standard Flutter application structure with Flame game engin
 - Input handling through gesture detectors and keyboard events
 - Game loop handles update and render cycles automatically
 
+## Game Interaction Rules
+
+**IMPORTANT**: The Dark Room game has specific interaction patterns that must be followed:
+
+- **Always-Playing Sound Sources**: Sound sources continuously play their audio loops at their fixed positions - they never stop or start based on player actions. Players navigate by hearing these persistent environmental sounds.
+- **Proximity-Based Volume**: All sound sources get louder as the player approaches and quieter as they move away. Volume changes smoothly based on 3D distance calculations.
+- **Wall and Room Attenuation**: Walls and separate rooms significantly reduce sound volume and add muffling effects (low-pass filtering). This creates realistic audio occlusion.
+- **Variable Sound Ranges**: Each sound source has its own effective radius:
+  - Small objects: ~100 units (music boxes, clocks, small electronics)
+  - Medium objects: ~200 units (fans, computers, appliances)
+  - Large objects: ~400+ units (generators, HVAC, major water features)
+- **Automatic Item Pickup**: Items (keys, etc.) are picked up automatically when the player gets close enough - no manual interaction required.
+- **Automatic Door Unlocking**: Doors automatically unlock when the player approaches with the required key in inventory.
+- **NO Manual Activation**: Never implement manual interaction systems (like pressing buttons to activate sounds). All audio interaction is automatic and proximity-based.
+
 ## Key Configuration
 
 - **Dart SDK**: ^3.8.1
