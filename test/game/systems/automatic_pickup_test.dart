@@ -41,7 +41,7 @@ void main() {
   group('Automatic Pickup System Tests', () {
     testWithGame<DarkRoomGame>(
       'player automatically picks up nearby items',
-      DarkRoomGame.new,
+      () => DarkRoomGame(testMode: true),
       (game) async {
       // Load tutorial level which has items
       final level = TutorialLevel();
@@ -92,7 +92,7 @@ void main() {
     
     testWithGame<DarkRoomGame>(
       'player does not pick up items outside pickup radius',
-      DarkRoomGame.new,
+      () => DarkRoomGame(testMode: true),
       (game) async {
       // Load tutorial level
       final level = TutorialLevel();
@@ -135,7 +135,7 @@ void main() {
     
     testWithGame<DarkRoomGame>(
       'inventory system prevents duplicate pickups',
-      DarkRoomGame.new,
+      () => DarkRoomGame(testMode: true),
       (game) async {
       // Load tutorial level
       final level = TutorialLevel();
@@ -183,7 +183,7 @@ void main() {
     
     testWithGame<DarkRoomGame>(
       'door automatically unlocks when player has required key',
-      DarkRoomGame.new,
+      () => DarkRoomGame(testMode: true),
       (game) async {
       // Load tutorial level
       final level = TutorialLevel();

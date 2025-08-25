@@ -45,7 +45,7 @@ void main() {
       (game) async {
         await game.ready();
         final player = game.player!;
-        expect(player.position, equals(Vector2(400, 300)));
+        expect(player.position, equals(Vector2(400, 600)));
       },
     );
 

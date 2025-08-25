@@ -18,7 +18,7 @@ void main() {
       narrationSystem = NarrationSystem();
     });
 
-    test('Enhanced item descriptions work correctly', () {
+    test('Enhanced item descriptions work correctly', () async {
       // Test that narration system enhances descriptions
       String capturedNarration = '';
       
@@ -28,14 +28,20 @@ void main() {
 
       // Test key enhancement
       narrationSystem.narrateItemPickup('key', 'A simple key');
+      // Allow time for narration to start
+      await Future.delayed(Duration(milliseconds: 10));
       expect(capturedNarration, contains('Its metallic surface is cool to the touch'));
 
-      // Test brass key enhancement
+      // Clear queue and test brass key enhancement
+      narrationSystem.clearQueue();
       narrationSystem.narrateItemPickup('brass key', 'A brass key');
+      await Future.delayed(Duration(milliseconds: 10));
       expect(capturedNarration, contains('The brass gleams faintly'));
 
-      // Test coin enhancement
+      // Clear queue and test coin enhancement
+      narrationSystem.clearQueue();
       narrationSystem.narrateItemPickup('coin', 'A small coin');
+      await Future.delayed(Duration(milliseconds: 10));
       expect(capturedNarration, contains('A small metallic disc, warm from your pocket'));
     });
 

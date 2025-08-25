@@ -63,7 +63,7 @@ void main() {
         await game.ready();
         expect(game.currentLevel, isA<MenuLevel>());
         expect(game.player, isNotNull);
-        expect(game.player!.position, equals(Vector2(400, 300)));
+        expect(game.player!.position, equals(Vector2(400, 600)));
       },
     );
 

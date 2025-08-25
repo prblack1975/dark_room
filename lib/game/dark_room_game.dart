@@ -42,7 +42,14 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   Vector2? _testPlayerSpawn;
   bool _skipDefaultLevel = false;
   
-  DarkRoomGame({this.onReturnToMenu});
+  DarkRoomGame({this.onReturnToMenu, bool testMode = false, Vector2? testPlayerSpawn}) {
+    if (testMode) {
+      _testMode = true;
+      _testPlayerSpawn = testPlayerSpawn;
+      _skipDefaultLevel = true;
+      print('🧪 GAME: Test mode enabled during construction with spawn: ${testPlayerSpawn ?? 'default'}');
+    }
+  }
   
   /// Enable test mode to skip default level loading and set custom player spawn
   void enableTestMode({Vector2? playerSpawn}) {
