@@ -8,6 +8,7 @@ import '../audio/audio_manager.dart';
 import '../systems/inventory_system.dart';
 import '../systems/narration_system.dart';
 import '../systems/health_system.dart';
+import '../systems/level_progress_manager.dart';
 
 abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   final String name;
@@ -28,6 +29,9 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   // Debug timing for spatial audio logs
   double _lastDebugTime = 0.0;
   
+  // Track level start time for completion statistics
+  DateTime? _levelStartTime;
+  
   Level({
     required this.name,
     required this.description,
@@ -40,6 +44,7 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   Future<void> onLoad() async {
     await super.onLoad();
     _audioPlayer = AssetAudioPlayer();
+    _levelStartTime = DateTime.now();
     
     // Initialize new systems
     inventorySystem = InventorySystem();
@@ -55,6 +60,8 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
     await buildLevel();
     await initializeSoundSources();
     // Note: _initializePlayerSystems() is called after player is added to level
+    
+    print('⏱️ LEVEL: Started level "$name" at $_levelStartTime');
   }
   
   Future<void> initializeSoundSources() async {
@@ -214,11 +221,44 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
     }
   }
   
-  void completeLevel() {
+  void completeLevel() async {
     print('🟢 DEBUG: Would play level complete sound (DISABLED)');
     // _audioPlayer.playLevelCompleteSound(); // Temporarily disabled for debugging
     print('Level Complete: $name');
+    
+    // Save progress data
+    final levelId = _getLevelIdFromName(name);
+    if (levelId != null && _levelStartTime != null) {
+      final completionTime = DateTime.now().difference(_levelStartTime!);
+      final healthRemaining = healthSystem.currentHealth;
+      
+      final progressManager = LevelProgressManager();
+      await progressManager.markLevelCompleted(
+        levelId,
+        completionTime: completionTime,
+        attempts: 1, // TODO: Track actual attempts
+        healthRemaining: healthRemaining,
+      );
+      
+      print('💾 LEVEL: Saved completion data for $levelId - Time: ${completionTime.inSeconds}s, Health: ${healthRemaining.toStringAsFixed(1)}%');
+    }
+    
     gameRef.completeLevel();
+  }
+  
+  String? _getLevelIdFromName(String levelName) {
+    if (levelName.contains('Tutorial') || levelName.contains('First Steps')) {
+      return 'tutorial';
+    } else if (levelName.contains('Simple Escape') || levelName.contains('Antechamber')) {
+      return 'escape_room';
+    } else if (levelName.contains('Laboratory') || levelName.contains('Chemical Analysis')) {
+      return 'laboratory';
+    } else if (levelName.contains('Basement') || levelName.contains('Industrial Underground')) {
+      return 'basement';
+    } else if (levelName.contains('Office Complex') || levelName.contains('Corporate Tower')) {
+      return 'office_complex';
+    }
+    return null;
   }
   
   @override

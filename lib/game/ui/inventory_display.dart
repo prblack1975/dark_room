@@ -12,7 +12,7 @@ import 'settings_config.dart';
 /// - Non-intrusive corner positioning
 /// - Follows "minimal HUD" aesthetic
 class InventoryDisplay extends Component {
-  late InventorySystem _inventorySystem;
+  InventorySystem? _inventorySystem;
   late SettingsConfig _settings;
   late TextPaint _textPaint;
   late TextPaint _headerPaint;
@@ -68,7 +68,7 @@ class InventoryDisplay extends Component {
     if (_inventorySystem == null) return;
     
     _displayItems.clear();
-    _displayItems.addAll(_inventorySystem.items);
+    _displayItems.addAll(_inventorySystem!.items);
     _needsUpdate = true;
   }
   
@@ -83,7 +83,7 @@ class InventoryDisplay extends Component {
     super.update(dt);
     
     // Check if inventory has changed
-    if (_inventorySystem != null && _inventorySystem.items.length != _displayItems.length) {
+    if (_inventorySystem != null && _inventorySystem!.items.length != _displayItems.length) {
       _updateDisplayItems();
     }
     

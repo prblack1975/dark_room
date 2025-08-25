@@ -12,7 +12,7 @@ import 'settings_config.dart';
 /// - Positioned at bottom of screen
 /// - Follows minimal HUD aesthetic
 class NarrationDisplay extends Component {
-  late NarrationSystem _narrationSystem;
+  NarrationSystem? _narrationSystem;
   late SettingsConfig _settings;
   late TextPaint _textPaint;
   
@@ -60,8 +60,8 @@ class NarrationDisplay extends Component {
     _narrationSystem = narrationSystem;
     
     // Set up callbacks for narration events
-    _narrationSystem.onNarrationStart = _onNarrationStart;
-    _narrationSystem.onNarrationEnd = _onNarrationEnd;
+    _narrationSystem!.onNarrationStart = _onNarrationStart;
+    _narrationSystem!.onNarrationEnd = _onNarrationEnd;
     
     print('🗣️ NARRATION DISPLAY: Connected to narration system');
   }

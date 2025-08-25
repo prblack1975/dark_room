@@ -7,28 +7,27 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flame/game.dart';
 
 import 'package:dark_room/main.dart';
-import 'package:dark_room/game/dark_room_game.dart';
+import 'package:dark_room/game/ui/menu/main_menu_screen.dart';
 
 void main() {
-  testWidgets('DarkRoomApp initializes and renders black screen', (WidgetTester tester) async {
+  testWidgets('DarkRoomApp initializes and renders menu screen', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const DarkRoomApp());
 
     // Verify that the app initializes with correct title
     expect(find.byType(MaterialApp), findsOneWidget);
     
-    // Verify that the GameScreen widget is present
-    expect(find.byType(GameScreen), findsOneWidget);
+    // Verify that the GameNavigator widget is present
+    expect(find.byType(GameNavigator), findsOneWidget);
+    
+    // Verify that the MainMenuScreen widget is present (default state)
+    expect(find.byType(MainMenuScreen), findsOneWidget);
     
     // Verify that the Scaffold has black background
     final Scaffold scaffold = tester.widget(find.byType(Scaffold));
     expect(scaffold.backgroundColor, equals(Colors.black));
-    
-    // Verify that a GameWidget is present (the Flame game widget)
-    expect(find.byType(GameWidget<DarkRoomGame>), findsOneWidget);
   });
 
   testWidgets('DarkRoomApp has correct theme configuration', (WidgetTester tester) async {

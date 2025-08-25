@@ -9,14 +9,18 @@ import 'components/pickup_debug_overlay.dart';
 import 'levels/level.dart';
 import 'levels/tutorial_level.dart';
 import 'levels/escape_room_level.dart';
-import 'levels/menu_level.dart';
+import 'levels/laboratory_level.dart';
+import 'levels/basement_level.dart';
+import 'levels/office_complex_level.dart';
 import 'systems/health_system.dart';
 import 'ui/game_hud.dart';
 import 'ui/settings_config.dart';
 
 class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasCollisionDetection {
-  late Player player;
-  late Level currentLevel;
+  final VoidCallback? onReturnToMenu;
+  
+  Player? player;
+  Level? currentLevel;
   late StableDebugOverlay debugOverlay;
   late WallOcclusionDebug wallOcclusionDebug;
   late PickupDebugOverlay pickupDebugOverlay;
@@ -24,8 +28,15 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   late SettingsConfig settings;
   late HealthSystem healthSystem;
   
+  @override
   bool debugMode = false;
   bool isGamePaused = false;
+  
+  // Track initialization state
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
+  
+  DarkRoomGame({this.onReturnToMenu});
   
   @override
   Future<void> onLoad() async {
@@ -37,15 +48,15 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     // Initialize settings
     settings = SettingsConfig();
     
-    // Initialize player
-    player = Player(position: Vector2(400, 300));
-    
-    // Initialize health system
+    // Initialize health system first
     healthSystem = HealthSystem();
     await add(healthSystem);
     
+    // Initialize player
+    player = Player(position: Vector2(400, 300));
+    
     // Connect player to health system
-    player.setHealthSystem(healthSystem);
+    player!.setHealthSystem(healthSystem);
     
     // Initialize debug overlays
     debugOverlay = StableDebugOverlay();
@@ -56,57 +67,74 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     gameHUD = GameHUD();
     await add(gameHUD);
     
-    // Load first level (menu)
-    await loadLevel(MenuLevel());
+    // Mark as initialized
+    _isInitialized = true;
+    print('🎮 GAME: DarkRoomGame initialization completed');
   }
   
   Future<void> loadLevel(Level level) async {
+    // Ensure game is fully initialized before loading level
+    if (!_isInitialized) {
+      print('❌ GAME: Cannot load level - game not fully initialized');
+      return;
+    }
+    
+    print('🎮 GAME: Starting level load: ${level.name}');
+    
     // Remove previous level if exists
     if (children.whereType<Level>().isNotEmpty) {
       removeAll(children.whereType<Level>());
     }
     
+    // Ensure player is initialized
+    if (player == null) {
+      player = Player(position: Vector2(400, 300));
+      player!.setHealthSystem(healthSystem);
+    }
+    
     currentLevel = level;
-    await add(currentLevel);
+    await add(currentLevel!);
     
     // Add player to the level
-    await currentLevel.add(player);
+    await currentLevel!.add(player!);
     
     // Set player spawn position
-    player.position = currentLevel.playerSpawn;
+    player!.position = currentLevel!.playerSpawn;
     
     // Initialize player systems now that player is in the level
-    await currentLevel.initializePlayerSystems();
+    await currentLevel!.initializePlayerSystems();
     
     // Add debug overlays if in debug mode
     if (debugMode) {
-      await currentLevel.add(debugOverlay);
+      await currentLevel!.add(debugOverlay);
     }
     
     // Always add wall occlusion debug (it manages its own visibility)
-    await currentLevel.add(wallOcclusionDebug);
+    await currentLevel!.add(wallOcclusionDebug);
     
     // Always add pickup debug overlay (it manages its own visibility)
-    await currentLevel.add(pickupDebugOverlay);
+    await currentLevel!.add(pickupDebugOverlay);
     
     // Connect HUD to level systems
     gameHUD.connectSystems(
-      inventorySystem: currentLevel.inventorySystem,
-      narrationSystem: currentLevel.narrationSystem,
+      inventorySystem: currentLevel!.inventorySystem,
+      narrationSystem: currentLevel!.narrationSystem,
       healthSystem: healthSystem,
     );
     
     // Connect health system to narration system
-    healthSystem.setNarrationSystem(currentLevel.narrationSystem);
+    healthSystem.setNarrationSystem(currentLevel!.narrationSystem);
     
-    // Reset health for new level (except for menu level)
-    if (level is! MenuLevel) {
-      healthSystem.resetHealth();
-    }
+    // Reset health for new level
+    healthSystem.resetHealth();
   }
   
   @override
   KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    final result = super.onKeyEvent(event, keysPressed);
+    if (result == KeyEventResult.handled) {
+      return result;
+    }
     // Toggle debug mode with F3 key only
     if (event is KeyDownEvent) {
       if (keysPressed.contains(LogicalKeyboardKey.f3)) {
@@ -117,9 +145,7 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
       // Return to menu with ESC or M key
       if (keysPressed.contains(LogicalKeyboardKey.escape) ||
           keysPressed.contains(LogicalKeyboardKey.keyM)) {
-        if (currentLevel is! MenuLevel) {
-          loadLevel(MenuLevel());
-        }
+        onReturnToMenu?.call();
         return KeyEventResult.handled;
       }
       
@@ -211,7 +237,7 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     }
     
     // Pass movement keys to player
-    player.updateMovement(keysPressed);
+    player?.updateMovement(keysPressed);
     
     // Return handled instead of ignored to prevent system audio feedback
     return KeyEventResult.handled;
@@ -220,14 +246,16 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   void toggleDebugMode() {
     debugMode = !debugMode;
     
-    if (debugMode) {
-      if (!currentLevel.children.contains(debugOverlay)) {
-        currentLevel.add(debugOverlay);
-      }
-      // Debug overlay is now stable
-    } else {
-      if (currentLevel.children.contains(debugOverlay)) {
-        currentLevel.remove(debugOverlay);
+    if (currentLevel != null) {
+      if (debugMode) {
+        if (!currentLevel!.children.contains(debugOverlay)) {
+          currentLevel!.add(debugOverlay);
+        }
+        // Debug overlay is now stable
+      } else {
+        if (currentLevel!.children.contains(debugOverlay)) {
+          currentLevel!.remove(debugOverlay);
+        }
       }
     }
   }
@@ -243,7 +271,39 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   
   void completeLevel() {
     // Return to menu after level completion
-    loadLevel(MenuLevel());
+    onReturnToMenu?.call();
+  }
+  
+  void loadLevelById(String levelId) {
+    if (!_isInitialized) {
+      print('⚠️ GAME: Cannot load level $levelId - game not fully initialized yet');
+      return;
+    }
+    
+    Level level;
+    switch (levelId.toLowerCase()) {
+      case 'tutorial':
+        level = TutorialLevel();
+        break;
+      case 'escape_room':
+        level = EscapeRoomLevel();
+        break;
+      case 'laboratory':
+        level = LaboratoryLevel();
+        break;
+      case 'basement':
+        level = BasementLevel();
+        break;
+      case 'office_complex':
+        level = OfficeComplexLevel();
+        break;
+      default:
+        print('❌ GAME: Unknown level ID: $levelId, loading tutorial instead');
+        level = TutorialLevel();
+    }
+    
+    print('🎮 GAME: Loading level: $levelId');
+    loadLevel(level);
   }
   
   @override
