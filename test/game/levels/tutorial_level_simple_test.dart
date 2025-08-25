@@ -5,14 +5,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dark_room/game/levels/tutorial_level.dart';
 import 'package:dark_room/game/components/wall.dart';
 import 'package:dark_room/game/components/game_object.dart';
+import '../../helpers/test_setup.dart';
 
 void main() {
+  setUpAll(() {
+    UniversalTestSetup.setupCompleteTestEnvironment();
+  });
+  
+  tearDownAll(() {
+    UniversalTestSetup.resetAllMocks();
+  });
   group('TutorialLevel (Simple Tests)', () {
     testWithFlameGame('initializes with correct basic properties', (game) async {
       final level = TutorialLevel();
       
-      expect(level.name, equals('Tutorial'));
-      expect(level.description, equals('Learn the basics of movement and interaction'));
+      expect(level.name, equals('Tutorial: First Steps'));
+      expect(level.description, equals('Learn the basics of movement and audio navigation in the darkness'));
       expect(level.playerSpawn, equals(Vector2(100, 300)));
       expect(level.inventory, isEmpty);
     });

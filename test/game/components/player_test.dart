@@ -7,8 +7,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dark_room/game/components/player.dart';
 import 'package:dark_room/game/components/wall.dart';
 import 'package:dark_room/game/dark_room_game.dart';
+import '../../helpers/test_setup.dart';
 
 void main() {
+  setUpAll(() {
+    UniversalTestSetup.setupCompleteTestEnvironment();
+  });
+  
+  tearDownAll(() {
+    UniversalTestSetup.resetAllMocks();
+  });
   group('Player', () {
     testWithFlameGame('initializes with correct properties', (game) async {
       final player = Player(position: Vector2(100, 100));
@@ -131,7 +139,7 @@ void main() {
   group('Player Collision', () {
     testWithGame<DarkRoomGame>(
       'collision with wall reverts position',
-      () => DarkRoomGame(),
+      () => TestGameFactory.createIsolatedGame(playerSpawn: Vector2(100, 100)),
       (game) async {
         final player = Player(position: Vector2(100, 100));
         final wall = Wall(position: Vector2(200, 100), size: Vector2(50, 50));

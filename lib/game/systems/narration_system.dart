@@ -181,8 +181,9 @@ class NarrationSystem extends Component {
       return enhancements[itemName.toLowerCase()]!;
     }
     
-    // Check for partial matches
-    for (final key in enhancements.keys) {
+    // Check for partial matches, prioritizing longer matches
+    final sortedKeys = enhancements.keys.toList()..sort((a, b) => b.length.compareTo(a.length));
+    for (final key in sortedKeys) {
       if (itemName.toLowerCase().contains(key)) {
         return enhancements[key]!;
       }

@@ -32,12 +32,21 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   // Track level start time for completion statistics
   DateTime? _levelStartTime;
   
+  // Test isolation mode
+  bool _testIsolationMode = false;
+  
   Level({
     required this.name,
     required this.description,
     Vector2? spawn,
   }) {
     playerSpawn = spawn ?? Vector2(400, 300);
+  }
+  
+  /// Enable test isolation mode to prevent automatic system connections
+  void enableTestIsolation() {
+    _testIsolationMode = true;
+    print('🧪 LEVEL: Test isolation enabled for ${name}');
   }
   
   @override
@@ -145,6 +154,11 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   
   /// Initialize player's system references (call after player is added to level)
   Future<void> initializePlayerSystems() async {
+    if (_testIsolationMode) {
+      print('🧪 LEVEL: Skipping player system initialization in test isolation mode');
+      return;
+    }
+    
     final player = children.whereType<Player>().firstOrNull;
     if (player != null) {
       player.setInventorySystem(inventorySystem);

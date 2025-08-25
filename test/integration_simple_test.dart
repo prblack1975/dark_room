@@ -5,9 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dark_room/game/dark_room_game.dart';
 import 'package:dark_room/game/levels/menu_level.dart';
+import 'helpers/test_setup.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() {
+    TestAudioSetup.setupTestEnvironment();
+  });
+  
+  tearDownAll(() {
+    TestAudioSetup.resetMocks();
+  });
   
   group('Integration Tests - Basic Game Flow', () {
     testWithGame<DarkRoomGame>(

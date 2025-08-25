@@ -1,10 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/components.dart';
 import 'package:dark_room/game/audio/audio_manager.dart';
 import 'package:dark_room/game/audio/asset_audio_player.dart';
+import 'package:dark_room/game/dark_room_game.dart';
+import 'package:dark_room/game/levels/level.dart';
 
 // Import the generated mocks
 import 'test_setup.mocks.dart';
@@ -105,6 +108,117 @@ class TestAudioSetup {
     
     // Also enable test mode in AssetAudioPlayer
     AssetAudioPlayer.setTestInstance(getMockAssetAudioPlayer());
+  }
+}
+
+/// Universal test setup class for comprehensive testing environment
+class UniversalTestSetup {
+  static bool _isSetup = false;
+  
+  /// Set up complete testing environment with all necessary mocks
+  static void setupCompleteTestEnvironment() {
+    if (_isSetup) return;
+    
+    // Ensure Flutter bindings are initialized
+    TestWidgetsFlutterBinding.ensureInitialized();
+    
+    // Setup audio mocking
+    TestAudioSetup.setupTestEnvironment();
+    
+    // Setup comprehensive plugin mocks
+    _setupAllPluginMocks();
+    
+    _isSetup = true;
+    print('🧪 UNIVERSAL TEST: Complete testing environment initialized');
+  }
+  
+  /// Setup all Flutter plugin mocks to prevent exceptions
+  static void _setupAllPluginMocks() {
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    
+    // Shared preferences mock
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/shared_preferences'),
+      (MethodCall methodCall) async {
+        switch (methodCall.method) {
+          case 'getAll':
+            return <String, dynamic>{};
+          case 'setString':
+          case 'setBool':
+          case 'setInt':
+          case 'setDouble':
+            return true;
+          case 'getString':
+            return null;
+          case 'getBool':
+            return false;
+          case 'getInt':
+            return 0;
+          case 'getDouble':
+            return 0.0;
+          case 'remove':
+            return true;
+          case 'clear':
+            return true;
+          default:
+            return null;
+        }
+      },
+    );
+    
+    // Path provider mock
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (MethodCall methodCall) async {
+        switch (methodCall.method) {
+          case 'getTemporaryDirectory':
+            return '/tmp';
+          case 'getApplicationSupportDirectory':
+            return '/tmp/app_support';
+          case 'getApplicationDocumentsDirectory':
+            return '/tmp/documents';
+          default:
+            return '/tmp';
+        }
+      },
+    );
+    
+    // Platform channel mock (for Flutter services)
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('flutter/platform'),
+      (MethodCall methodCall) async => null,
+    );
+    
+    print('🧪 UNIVERSAL TEST: All plugin mocks configured');
+  }
+  
+  /// Reset all mocks and clean up
+  static void resetAllMocks() {
+    TestAudioSetup.resetMocks();
+    _isSetup = false;
+    print('🧪 UNIVERSAL TEST: All mocks reset');
+  }
+}
+
+/// Test game factory for creating isolated test games
+class TestGameFactory {
+  /// Create a game with isolated testing setup
+  static DarkRoomGame createIsolatedGame({Vector2? playerSpawn}) {
+    final game = DarkRoomGame();
+    if (playerSpawn != null) {
+      game.enableTestMode(playerSpawn: playerSpawn);
+    } else {
+      game.enableTestMode();
+    }
+    return game;
+  }
+  
+  /// Create a game pre-loaded with a specific level for testing
+  static DarkRoomGame createWithLevel(Level level, {Vector2? playerSpawn}) {
+    final game = DarkRoomGame();
+    game.enableTestMode(playerSpawn: playerSpawn);
+    // Level will be set after game initialization
+    return game;
   }
 }
 

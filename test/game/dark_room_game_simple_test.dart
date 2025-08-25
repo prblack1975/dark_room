@@ -6,9 +6,16 @@ import 'package:dark_room/game/dark_room_game.dart';
 import 'package:dark_room/game/components/player.dart';
 import 'package:dark_room/game/levels/level.dart';
 import 'package:dark_room/game/levels/menu_level.dart';
+import '../helpers/test_setup.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() {
+    TestAudioSetup.setupTestEnvironment();
+  });
+  
+  tearDownAll(() {
+    TestAudioSetup.resetMocks();
+  });
   
   group('DarkRoomGame (Simple Tests)', () {
     testWithGame<DarkRoomGame>(

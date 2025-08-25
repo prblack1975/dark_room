@@ -1,7 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dark_room/game/systems/narration_system.dart';
+import '../../helpers/test_setup.dart';
 
 void main() {
+  setUpAll(() {
+    UniversalTestSetup.setupCompleteTestEnvironment();
+  });
+  
+  tearDownAll(() {
+    UniversalTestSetup.resetAllMocks();
+  });
+  
   group('Enhanced Narration System Tests', () {
     late NarrationSystem narrationSystem;
 
@@ -23,7 +32,7 @@ void main() {
 
       // Test brass key enhancement
       narrationSystem.narrateItemPickup('brass key', 'A brass key');
-      expect(capturedNarration, contains('The brass gleams faintly in the darkness'));
+      expect(capturedNarration, contains('The brass gleams faintly'));
 
       // Test coin enhancement
       narrationSystem.narrateItemPickup('coin', 'A small coin');

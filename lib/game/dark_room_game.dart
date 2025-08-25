@@ -37,7 +37,20 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
   
+  // Test mode support
+  bool _testMode = false;
+  Vector2? _testPlayerSpawn;
+  bool _skipDefaultLevel = false;
+  
   DarkRoomGame({this.onReturnToMenu});
+  
+  /// Enable test mode to skip default level loading and set custom player spawn
+  void enableTestMode({Vector2? playerSpawn}) {
+    _testMode = true;
+    _testPlayerSpawn = playerSpawn;
+    _skipDefaultLevel = true;
+    print('🧪 GAME: Test mode enabled with spawn: ${playerSpawn ?? 'default'}');
+  }
   
   @override
   Future<void> onLoad() async {
@@ -53,8 +66,9 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     healthSystem = HealthSystem();
     await add(healthSystem);
     
-    // Initialize player
-    player = Player(position: Vector2(400, 300));
+    // Initialize player with test spawn position if specified
+    final spawnPosition = _testPlayerSpawn ?? Vector2(400, 300);
+    player = Player(position: spawnPosition);
     
     // Connect player to health system
     player!.setHealthSystem(healthSystem);
@@ -72,9 +86,13 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     _isInitialized = true;
     print('🎮 GAME: DarkRoomGame initialization completed');
     
-    // Load default MenuLevel
-    await loadLevel(MenuLevel());
-    print('🎮 GAME: MenuLevel loaded as default level');
+    // Load default MenuLevel unless in test mode
+    if (!_skipDefaultLevel) {
+      await loadLevel(MenuLevel());
+      print('🎮 GAME: MenuLevel loaded as default level');
+    } else {
+      print('🧪 GAME: Skipping default level load in test mode');
+    }
   }
   
   Future<void> loadLevel(Level level) async {
