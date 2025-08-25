@@ -1,0 +1,12 @@
+{
+  "platform": "web",
+  "version": "1.1.0+2",
+  "buildType": "release",
+  "buildTime": "2025-08-25T23:43:02Z",
+  "commitHash": "cad623824b795735cda5a6a8b5ce2556e09ec5e8",
+  "baseHref": "/dark_room/",
+  "renderer": "canvaskit",
+  "dartVersion": "3.8.1",
+  "flutterVersion": "3.32.7",
+  "buildSize": " 24M"
+}
