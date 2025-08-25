@@ -1,0 +1,5 @@
+This would be a looping audio file of water dripping sounds.
+In the full implementation, this would be dripping_water.mp3 or .wav
+Duration: ~3-5 seconds loop
+Volume: Medium
+Description: Steady water drips for atmosphere

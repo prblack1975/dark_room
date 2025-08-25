@@ -1,0 +1,276 @@
+import 'package:flame/components.dart';
+import '../components/wall.dart';
+import '../components/game_object.dart';
+import '../components/player.dart';
+import '../dark_room_game.dart';
+import '../audio/asset_audio_player.dart';
+import '../audio/audio_manager.dart';
+import '../systems/inventory_system.dart';
+import '../systems/narration_system.dart';
+import '../systems/health_system.dart';
+
+abstract class Level extends Component with HasGameRef<DarkRoomGame> {
+  final String name;
+  final String description;
+  late Vector2 playerSpawn;
+  final List<String> inventory = []; // Legacy - kept for compatibility
+  late AssetAudioPlayer _audioPlayer;
+  
+  // New systems for automatic pickup and health
+  late InventorySystem inventorySystem;
+  late NarrationSystem narrationSystem;
+  late HealthSystem healthSystem;
+  
+  // Performance optimization: cache wall list
+  List<Wall>? _cachedWalls;
+  bool _wallsCacheValid = false;
+  
+  // Debug timing for spatial audio logs
+  double _lastDebugTime = 0.0;
+  
+  Level({
+    required this.name,
+    required this.description,
+    Vector2? spawn,
+  }) {
+    playerSpawn = spawn ?? Vector2(400, 300);
+  }
+  
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    _audioPlayer = AssetAudioPlayer();
+    
+    // Initialize new systems
+    inventorySystem = InventorySystem();
+    narrationSystem = NarrationSystem();
+    healthSystem = HealthSystem();
+    add(inventorySystem);
+    add(narrationSystem);
+    add(healthSystem);
+    
+    // Connect systems
+    inventorySystem.setNarrationSystem(narrationSystem);
+    
+    await buildLevel();
+    await initializeSoundSources();
+    // Note: _initializePlayerSystems() is called after player is added to level
+  }
+  
+  Future<void> initializeSoundSources() async {
+    final audioManager = AudioManager();
+    final objectsWithSound = children.whereType<GameObject>()
+        .where((obj) => obj.soundFile != null);
+    
+    print('🔊 DEBUG: Initializing ${objectsWithSound.length} sound sources for level: $name');
+    
+    if (objectsWithSound.isEmpty) {
+      print('⚠️ DEBUG: No sound sources found in level');
+      return;
+    }
+    
+    for (final soundObject in objectsWithSound) {
+      if (soundObject.soundFile != null) {
+        final loop = soundObject.type == GameObjectType.soundSource;
+        
+        // Preload the sound
+        await audioManager.preloadSound(
+          soundObject.soundFile!,
+          'audio/interaction/${soundObject.soundFile!}',
+          loop: loop,
+        );
+        
+        // Immediately start continuous playback for sound sources
+        if (soundObject.type == GameObjectType.soundSource) {
+          await audioManager.startContinuousSound(soundObject.soundFile!);
+          print('🔊 DEBUG: Started continuous playback for ${soundObject.soundFile!} at position ${soundObject.position}');
+        }
+      }
+    }
+    
+    print('🔊 DEBUG: All sound sources initialized and playing for level: $name');
+  }
+  
+  // Override this to build the level
+  Future<void> buildLevel();
+  
+  // Helper method to create room boundaries
+  void createRoomBoundaries(Vector2 roomSize) {
+    // Top wall
+    add(Wall(
+      position: Vector2(0, 0),
+      size: Vector2(roomSize.x, 20),
+    ));
+    
+    // Bottom wall
+    add(Wall(
+      position: Vector2(0, roomSize.y - 20),
+      size: Vector2(roomSize.x, 20),
+    ));
+    
+    // Left wall
+    add(Wall(
+      position: Vector2(0, 0),
+      size: Vector2(20, roomSize.y),
+    ));
+    
+    // Right wall
+    add(Wall(
+      position: Vector2(roomSize.x - 20, 0),
+      size: Vector2(20, roomSize.y),
+    ));
+  }
+  
+  // Helper to add an object to the level
+  void addObject(GameObject object) {
+    add(object);
+  }
+  
+  /// Initialize player's system references (call after player is added to level)
+  Future<void> initializePlayerSystems() async {
+    final player = children.whereType<Player>().firstOrNull;
+    if (player != null) {
+      player.setInventorySystem(inventorySystem);
+      player.setHealthSystem(healthSystem);
+      print('🎯 LEVEL: Connected player to inventory and health systems');
+    } else {
+      print('⚠️ LEVEL: No player found to connect systems to');
+    }
+  }
+  
+  // Check for player interaction with objects (legacy for doors)
+  void checkInteractions() {
+    final player = children.whereType<Player>().firstOrNull;
+    if (player == null) return;
+    
+    final objects = children.whereType<GameObject>();
+    
+    for (final object in objects) {
+      if (!object.isActive) continue;
+      
+      final distance = player.getDistanceTo(
+        object.position + object.size / 2
+      );
+      
+      // Check door and interactable interactions (items are handled automatically by player)
+      if ((object.type == GameObjectType.door || object.type == GameObjectType.interactable) && distance < 40) {
+        handleObjectInteraction(object, player);
+      }
+    }
+  }
+  
+  void handleObjectInteraction(GameObject object, Player player) {
+    // Allow door interactions regardless of key status - doors should always give feedback
+    // Only check canInteract for non-door objects
+    if (object.type != GameObjectType.door && !object.canInteract(inventorySystem.items)) {
+      return;
+    }
+    
+    object.interact(inventorySystem.items);
+    
+    switch (object.type) {
+      case GameObjectType.item:
+        // Items are now handled automatically by the player's pickup system
+        // This code path should not be reached anymore
+        print('⚠️ WARNING: Item interaction through legacy system - should use automatic pickup');
+        break;
+        
+      case GameObjectType.door:
+        print('🚪 DEBUG: Door interaction - ${object.name}, isLocked: ${object.isLocked}, requiredKey: ${object.requiredKey}');
+        
+        if (object.isLocked && object.requiredKey != null) {
+          print('🗝️ DEBUG: Checking for key "${object.requiredKey}" in inventory: ${inventorySystem.items}');
+          
+          if (inventorySystem.hasItem(object.requiredKey!)) {
+            print('✅ DEBUG: Key found! Unlocking door');
+            object.isLocked = false;
+            narrationSystem.narrateDoorInteraction('The door unlocks with a soft click.');
+            _audioPlayer.playDoorOpenSound();
+          } else {
+            print('❌ DEBUG: Key not found in inventory');
+            narrationSystem.narrateDoorInteraction('The door is locked. You need to find the right key.');
+          }
+        }
+        
+        if (!object.isLocked) {
+          print('🎯 DEBUG: Door is unlocked - completing level');
+          // Complete the level
+          _audioPlayer.playDoorOpenSound();
+          narrationSystem.narrateLevelComplete(name);
+          completeLevel();
+        }
+        break;
+        
+      case GameObjectType.interactable:
+      case GameObjectType.soundSource:
+        // These don't require manual interaction
+        break;
+        
+      case GameObjectType.healthArtifact:
+        // Health artifacts are handled automatically by the player's pickup system
+        // This code path should not be reached anymore
+        print('⚠️ WARNING: Health artifact interaction through legacy system - should use automatic pickup');
+        break;
+    }
+  }
+  
+  void completeLevel() {
+    print('🟢 DEBUG: Would play level complete sound (DISABLED)');
+    // _audioPlayer.playLevelCompleteSound(); // Temporarily disabled for debugging
+    print('Level Complete: $name');
+    gameRef.completeLevel();
+  }
+  
+  @override
+  void update(double dt) {
+    super.update(dt);
+    checkInteractions();
+    updateSpatialAudio();
+  }
+  
+  void updateSpatialAudio() {
+    final player = children.whereType<Player>().firstOrNull;
+    if (player == null) return;
+    
+    final soundSources = children.whereType<GameObject>()
+        .where((obj) => obj.type == GameObjectType.soundSource);
+    
+    // Get all walls for occlusion calculations
+    final walls = getAllWalls();
+    
+    // Debug logging every 5 seconds (reduced frequency)
+    final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
+    if (currentTime - _lastDebugTime > 5.0) {
+      print('🔊 LEVEL: Updating spatial audio for ${soundSources.length} sound sources, player at ${player.position}');
+      _lastDebugTime = currentTime;
+    }
+    
+    for (final soundSource in soundSources) {
+      soundSource.updateSpatialAudioWithOcclusion(player.position, walls);
+    }
+  }
+  
+  /// Get all walls in this level for occlusion calculations
+  /// Uses caching for performance optimization
+  List<Wall> getAllWalls() {
+    if (!_wallsCacheValid || _cachedWalls == null) {
+      _cachedWalls = children.whereType<Wall>().toList();
+      _wallsCacheValid = true;
+    }
+    return _cachedWalls!;
+  }
+  
+  /// Invalidate wall cache when walls are added/removed
+  void _invalidateWallCache() {
+    _wallsCacheValid = false;
+  }
+  
+  @override
+  bool onChildrenChanged(Component child, ChildrenChangeType type) {
+    if (child is Wall) {
+      _invalidateWallCache();
+    }
+    super.onChildrenChanged(child, type);
+    return true;
+  }
+}
