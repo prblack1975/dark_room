@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 // Simple audio player using procedural sounds for web compatibility
 class SimpleAudioPlayer {

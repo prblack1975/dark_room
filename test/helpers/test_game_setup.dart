@@ -45,5 +45,5 @@ void testWithMockedGame<T extends DarkRoomGame>(
     
     // Run the test
     await testFunction(game);
-  }, skip: skip, tags: tags);
+  }, skip: skip != null ? skip != 0 : null, tags: tags);
 }

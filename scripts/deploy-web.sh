@@ -127,6 +127,8 @@ Notes:
 - Requires git repository with remote origin
 - Creates deployment branch if it doesn't exist
 - Preserves deployment history unless --force is used
+- Creates GitHub deployment entry if 'gh' CLI is available
+- GitHub deployments provide tracking and status in the repository
 
 EOF
 }
@@ -242,7 +244,9 @@ prepare_deployment() {
         return 0
     fi
     
-    git clone "$PROJECT_DIR" deployment-repo
+    # Clone from the actual remote, not the local directory
+    local remote_url=$(cd "$PROJECT_DIR" && git remote get-url origin)
+    git clone "$remote_url" deployment-repo
     cd deployment-repo
     
     # Check if deployment branch exists
@@ -367,9 +371,82 @@ push_to_github() {
     
     if git push $push_args; then
         log_success "Successfully pushed to GitHub Pages"
+        # Create GitHub deployment after successful push
+        create_github_deployment
     else
         log_error "Failed to push to GitHub Pages"
         exit 1
+    fi
+}
+
+# Create GitHub deployment
+create_github_deployment() {
+    log_deploy "Creating GitHub deployment..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY RUN] Would create GitHub deployment"
+        return 0
+    fi
+    
+    # Extract repository information
+    local remote_url=$(cd "$PROJECT_DIR" && git remote get-url origin)
+    if [[ "$remote_url" =~ github\.com[:/]([^/]+)/([^/]+)(\.git)?$ ]]; then
+        local user_or_org="${BASH_REMATCH[1]}"
+        local repo_name="${BASH_REMATCH[2]}"
+        repo_name="${repo_name%.git}"
+    else
+        log_warning "Could not extract repository information from remote URL: $remote_url"
+        return 0
+    fi
+    
+    # Get deployment information
+    local commit_hash=$(cd "$PROJECT_DIR" && git rev-parse HEAD)
+    local version=$(cd "$PROJECT_DIR" && grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+    local deployment_url=$(get_deployment_url)
+    
+    # Create deployment using GitHub CLI if available
+    if command -v gh > /dev/null 2>&1; then
+        log_info "Creating deployment using GitHub CLI..."
+        
+        # Create deployment
+        local deployment_description="Deploy Dark Room Game v$version ($BUILD_TYPE) to GitHub Pages"
+        
+        if gh api repos/"$user_or_org"/"$repo_name"/deployments \
+            --method POST \
+            --field ref="$commit_hash" \
+            --field environment="github-pages" \
+            --field description="$deployment_description" \
+            --field auto_merge=false \
+            --field required_contexts='[]' > /tmp/deployment_response.json 2>/dev/null; then
+            
+            local deployment_id=$(jq -r '.id' /tmp/deployment_response.json 2>/dev/null)
+            
+            if [[ "$deployment_id" != "null" && -n "$deployment_id" ]]; then
+                log_success "Created GitHub deployment: $deployment_id"
+                
+                # Mark deployment as successful
+                if gh api repos/"$user_or_org"/"$repo_name"/deployments/"$deployment_id"/statuses \
+                    --method POST \
+                    --field state="success" \
+                    --field environment_url="$deployment_url" \
+                    --field description="Deployment completed successfully" > /dev/null 2>&1; then
+                    
+                    log_success "Marked deployment as successful"
+                else
+                    log_warning "Created deployment but failed to update status"
+                fi
+            else
+                log_warning "Created deployment but could not extract deployment ID"
+            fi
+            
+            # Clean up temporary file
+            rm -f /tmp/deployment_response.json
+        else
+            log_warning "Failed to create GitHub deployment (this is optional and doesn't affect the actual deployment)"
+        fi
+    else
+        log_info "GitHub CLI not available, skipping deployment creation"
+        log_info "Install 'gh' CLI to enable GitHub deployment tracking"
     fi
 }
 
@@ -409,7 +486,7 @@ show_deployment_summary() {
     if [[ "$DRY_RUN" != true ]]; then
         echo
         log_info "GitHub Pages deployment may take a few minutes to become available"
-        log_info "Check the repository's Pages settings and Actions tab for deployment status"
+        log_info "Check the repository's Pages settings, Actions tab, and Deployments section for status"
         
         echo
         log_info "Next steps:"

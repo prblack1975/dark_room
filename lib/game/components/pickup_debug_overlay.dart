@@ -1,6 +1,5 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'game_object.dart';
 import 'player.dart';
 import '../systems/inventory_system.dart';

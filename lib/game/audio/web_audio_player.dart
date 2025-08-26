@@ -1,20 +1,16 @@
-import 'dart:html' as html;
 import 'dart:async';
-import 'dart:math' as math;
 
-// Real web audio implementation using Web Audio API
+// Fallback web audio implementation using simple logging
+// Note: Real Web Audio API implementation would require package:web
 class WebAudioPlayer {
   static final WebAudioPlayer _instance = WebAudioPlayer._internal();
   factory WebAudioPlayer() => _instance;
   WebAudioPlayer._internal();
 
-  html.AudioContext? _audioContext;
   Timer? _currentSoundTimer;
 
-  html.AudioContext get audioContext {
-    _audioContext ??= html.AudioContext();
-    return _audioContext!;
-  }
+  // Fallback implementation - logs audio instead of playing
+  bool get audioContext => true;
 
   // Generate and play a beep tone
   Future<void> playBeep({
@@ -26,32 +22,8 @@ class WebAudioPlayer {
       // Stop any current sound
       _currentSoundTimer?.cancel();
       
-      final context = audioContext;
-      
-      // Create oscillator for tone generation
-      final oscillator = context.createOscillator();
-      final gainNode = context.createGain();
-      
-      // Connect oscillator -> gain -> destination
-      oscillator.connectNode(gainNode);
-      gainNode.connectNode(context.destination!);
-      
-      // Set frequency and type
-      oscillator.frequency!.value = frequency;
-      oscillator.type = 'sine'; // Smooth sine wave
-      
-      // Set volume with fade in/out to avoid clicking
-      final now = context.currentTime!;
-      gainNode.gain!.setValueAtTime(0, now);
-      gainNode.gain!.linearRampToValueAtTime(volume, now + 0.01); // Fade in
-      gainNode.gain!.linearRampToValueAtTime(volume, now + (durationMs / 1000) - 0.01);
-      gainNode.gain!.linearRampToValueAtTime(0, now + (durationMs / 1000)); // Fade out
-      
-      // Start and stop the oscillator
-      oscillator.start(now);
-      oscillator.stop(now + (durationMs / 1000));
-      
-      print('🔊 Playing ${frequency.toInt()}Hz for ${durationMs}ms at ${(volume * 100).toInt()}% volume');
+      // Fallback to console logging
+      print('🔊 BEEP: ${frequency.toInt()}Hz for ${durationMs}ms (Volume: ${(volume * 100).toInt()}%)');
       
     } catch (e) {
       print('Audio error: $e');
@@ -108,6 +80,5 @@ class WebAudioPlayer {
 
   void dispose() {
     _currentSoundTimer?.cancel();
-    _audioContext?.close();
   }
 }
