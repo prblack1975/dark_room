@@ -1,13 +1,17 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import '../utils/platform_utils.dart';
+import '../utils/game_logger.dart';
 
 class AssetAudioPlayer {
   static AssetAudioPlayer? _testInstance;
   static final AssetAudioPlayer _instance = AssetAudioPlayer._internal();
   
   factory AssetAudioPlayer() => _testInstance ?? _instance;
-  AssetAudioPlayer._internal();
+  AssetAudioPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
   
   /// Set a test instance (used during testing to inject mocks)
   static void setTestInstance(AssetAudioPlayer? testInstance) {
@@ -24,6 +28,9 @@ class AssetAudioPlayer {
   int _currentCollisionPlayer = 0;
   bool _isInitialized = false;
   
+  // Logger instance for this class
+  late final GameCategoryLogger _logger;
+  
   // Track which continuous sounds are commonly used for pre-initialization
   static const List<String> _commonContinuousSounds = [
     'click.mp3',
@@ -39,7 +46,7 @@ class AssetAudioPlayer {
     
     // In test mode, just register the sound without loading
     if (isTestMode) {
-      print('🧪 TEST: Registered audio $soundName (test mode)');
+      _logger.test('Registered audio $soundName (test mode)');
       return;
     }
     
@@ -48,9 +55,9 @@ class AssetAudioPlayer {
       // Preload the asset
       await player.setSource(AssetSource(assetPath));
       _players[soundName] = player;
-      print('✅ Loaded audio: $soundName from $assetPath');
+      _logger.success('Loaded audio: $soundName from $assetPath');
     } catch (e) {
-      print('❌ Failed to load $soundName from $assetPath: $e');
+      _logger.error('Failed to load $soundName from $assetPath: $e');
       // Do not create backup player - this was causing clicking sounds
       // _players[soundName] = AudioPlayer();
     }
@@ -59,7 +66,7 @@ class AssetAudioPlayer {
   Future<void> _initialize() async {
     if (_isInitialized) return;
     
-    print('🔄 Initializing asset audio system...');
+    _logger.process('Initializing asset audio system...');
     
     // Initialize all sound players with asset paths
     await _initializePlayer('wall_hit', 'audio/interaction/wall-hit-cartoon.mp3');
@@ -80,9 +87,9 @@ class AssetAudioPlayer {
         final player = AudioPlayer();
         await player.setSource(AssetSource('audio/interaction/wall-hit-cartoon.mp3'));
         _collisionPlayers.add(player);
-        print('✅ Loaded collision player ${i + 1}');
+        _logger.success('Loaded collision player ${i + 1}');
       } catch (e) {
-        print('❌ Failed to load collision player ${i + 1}: $e');
+        _logger.error('Failed to load collision player ${i + 1}: $e');
       }
     }
     
@@ -90,27 +97,27 @@ class AssetAudioPlayer {
     await _initializeContinuousPlayerPool();
     
     _isInitialized = true;
-    print('✅ Asset audio system ready!');
+    _logger.success('Asset audio system ready!');
   }
   
   /// Pre-initialize continuous sound player pool for better Fire OS compatibility
   Future<void> _initializeContinuousPlayerPool() async {
-    print('🔊 POOL: Initializing continuous sound player pool...');
+    _logger.pool('Initializing continuous sound player pool...');
     
     if (isTestMode) {
-      print('🧪 TEST: Skipping continuous player pool initialization in test mode');
+      _logger.test('Skipping continuous player pool initialization in test mode');
       return;
     }
     
     final poolSize = PlatformUtils.maxConcurrentAudioPlayers.clamp(2, 4);
-    print('🔊 POOL: Creating pool of $poolSize players per sound for ${PlatformUtils.platformName}');
+    _logger.pool('Creating pool of $poolSize players per sound for ${PlatformUtils.platformName}');
     
     for (final soundFile in _commonContinuousSounds) {
       final playerPool = <AudioPlayer>[];
       
       for (int i = 0; i < poolSize; i++) {
         try {
-          print('🔊 POOL: Creating player ${i + 1} for $soundFile');
+          _logger.pool('Creating player ${i + 1} for $soundFile');
           final player = AudioPlayer();
           
           // Pre-configure for continuous playback
@@ -119,7 +126,7 @@ class AssetAudioPlayer {
           await player.setVolume(0.0); // Start silent
           
           playerPool.add(player);
-          print('✅ POOL: Successfully created player ${i + 1} for $soundFile');
+          _logger.pool('Successfully created player ${i + 1} for $soundFile');
           
           // Add delay between player creation on Fire OS
           if (PlatformUtils.isFireOS) {
@@ -127,48 +134,48 @@ class AssetAudioPlayer {
           }
           
         } catch (e) {
-          print('❌ POOL: Failed to create player ${i + 1} for $soundFile: $e');
+          _logger.pool('Failed to create player ${i + 1} for $soundFile: $e');
           
           if (PlatformUtils.isFireOS) {
-            print('🔥 FIRE OS: Player pool creation failed - this may limit audio functionality');
+            _logger.fireOS('Player pool creation failed - this may limit audio functionality');
           }
         }
       }
       
       if (playerPool.isNotEmpty) {
         _continuousPlayerPool[soundFile] = playerPool;
-        print('✅ POOL: Initialized ${playerPool.length} players for $soundFile');
+        _logger.pool('Initialized ${playerPool.length} players for $soundFile');
       } else {
-        print('❌ POOL: No players successfully created for $soundFile');
+        _logger.pool('No players successfully created for $soundFile');
       }
     }
     
     final totalPlayers = _continuousPlayerPool.values.fold(0, (sum, pool) => sum + pool.length);
-    print('✅ POOL: Continuous player pool ready with $totalPlayers total players');
+    _logger.pool('Continuous player pool ready with $totalPlayers total players');
   }
 
   // Continuous sound methods
   Future<void> startContinuousSound(String soundName, String assetPath) async {
-    print('🔊 AUDIO: Starting continuous sound $soundName on ${PlatformUtils.platformName}');
-    print('🔊 AUDIO: Asset path: $assetPath');
+    _logger.pool('Starting continuous sound $soundName on ${PlatformUtils.platformName}');
+    _logger.pool('Asset path: $assetPath');
     
     try {
       await _initialize();
-      print('🔊 AUDIO: Audio system initialized');
+      _logger.pool('Audio system initialized');
       
       // Don't recreate if already playing
       if (_continuousPlayers.containsKey(soundName)) {
-        print('🔊 AUDIO: $soundName already playing, skipping');
+        _logger.pool('$soundName already playing, skipping');
         return;
       }
       
       // Extract filename from asset path for pool lookup
       final filename = assetPath.split('/').last;
-      print('🔊 AUDIO: Looking for pre-initialized player for $filename');
+      _logger.pool('Looking for pre-initialized player for $filename');
       
       // Try to use pre-initialized player pool first
       if (_continuousPlayerPool.containsKey(filename) && _continuousPlayerPool[filename]!.isNotEmpty) {
-        print('🔊 POOL: Using pre-initialized player for $filename');
+        _logger.pool('Using pre-initialized player for $filename');
         final playerPool = _continuousPlayerPool[filename]!;
         
         // Find an available player (not already in use)
@@ -184,51 +191,51 @@ class AssetAudioPlayer {
           // Start the pre-initialized player
           await availablePlayer.resume();
           _continuousPlayers[soundName] = availablePlayer;
-          print('✅ POOL: Successfully started pre-initialized player for $soundName');
+          _logger.pool('Successfully started pre-initialized player for $soundName');
           
-          print('🔊 POOL: Pre-initialized player started successfully');
+          _logger.pool('Pre-initialized player started successfully');
           return;
         } else {
-          print('⚠️ POOL: No available pre-initialized players for $filename, falling back to dynamic creation');
+          _logger.warning('No available pre-initialized players for $filename, falling back to dynamic creation');
         }
       }
       
       // Fallback to dynamic player creation if pool is not available
-      print('🔊 AUDIO: Creating new AudioPlayer for $soundName (fallback)');
+      _logger.pool('Creating new AudioPlayer for $soundName (fallback)');
       final player = AudioPlayer();
       
-      print('🔊 AUDIO: Setting source to $assetPath');
+      _logger.pool('Setting source to $assetPath');
       await player.setSource(AssetSource(assetPath));
       
-      print('🔊 AUDIO: Setting release mode to loop');
+      _logger.pool('Setting release mode to loop');
       await player.setReleaseMode(ReleaseMode.loop);
       
-      print('🔊 AUDIO: Setting initial volume to 0.0');
+      _logger.pool('Setting initial volume to 0.0');
       await player.setVolume(0.0); // Start silent
       
-      print('🔊 AUDIO: Starting playback');
+      _logger.pool('Starting playback');
       await player.resume(); // Start playing
       
       _continuousPlayers[soundName] = player;
-      print('✅ AUDIO: Successfully started continuous audio playback for $soundName (fallback)');
+      _logger.success('Successfully started continuous audio playback for $soundName (fallback)');
       
-      print('🔊 AUDIO: Dynamic player started successfully');
+      _logger.pool('Dynamic player started successfully');
       
     } catch (e) {
-      print('❌ AUDIO ERROR: Failed to start continuous sound $soundName: $e');
-      print('❌ AUDIO ERROR: Error type: ${e.runtimeType}');
+      _logger.error('Failed to start continuous sound $soundName: $e');
+      _logger.error('Error type: ${e.runtimeType}');
       
       // Add Fire OS specific error handling
       if (PlatformUtils.isFireOS) {
-        print('🔥 FIRE OS: Detected continuous audio failure on Fire tablet');
-        print('🔥 FIRE OS: This is a known issue with Fire OS audio limitations');
-        print('🔥 FIRE OS: Attempting fallback strategy...');
+        _logger.fireOS('Detected continuous audio failure on Fire tablet');
+        _logger.fireOS('This is a known issue with Fire OS audio limitations');
+        _logger.fireOS('Attempting fallback strategy...');
         
         try {
           // Try alternative approach for Fire OS
           await _startContinuousSoundFireOSFallback(soundName, assetPath);
         } catch (fallbackError) {
-          print('❌ FIRE OS: Fallback also failed: $fallbackError');
+          _logger.fireOS('Fallback also failed: $fallbackError');
         }
       }
     }
@@ -236,7 +243,7 @@ class AssetAudioPlayer {
   
   /// Fire OS specific fallback for continuous sounds
   Future<void> _startContinuousSoundFireOSFallback(String soundName, String assetPath) async {
-    print('🔥 FIRE OS: Attempting fallback continuous sound for $soundName');
+    _logger.fireOS('Attempting fallback continuous sound for $soundName');
     
     try {
       // Create a more conservative player setup for Fire OS
@@ -258,9 +265,9 @@ class AssetAudioPlayer {
       await Future.delayed(const Duration(milliseconds: 100));
       await player.resume();
       
-      print('✅ FIRE OS: Fallback continuous sound started for $soundName');
+      _logger.fireOS('Fallback continuous sound started for $soundName');
     } catch (e) {
-      print('❌ FIRE OS: Fallback failed for $soundName: $e');
+      _logger.fireOS('Fallback failed for $soundName: $e');
       rethrow;
     }
   }
@@ -275,36 +282,36 @@ class AssetAudioPlayer {
         
         // Only log volume changes that are significant (avoid spam)
         if (clampedVolume > 0.05) {
-          print('🔊 AUDIO: Set $soundName volume to ${(clampedVolume * 100).toInt()}%');
+          _logger.pool('Set $soundName volume to ${(clampedVolume * 100).toInt()}%');
         }
         
         // Log volume setting on Fire OS
         if (PlatformUtils.isFireOS && clampedVolume > 0.1) {
-          print('🔥 FIRE OS: $soundName volume set to ${(clampedVolume * 100).toInt()}%');
+          _logger.fireOS('$soundName volume set to ${(clampedVolume * 100).toInt()}%');
         }
       } else {
-        print('⚠️ AUDIO: No player found for $soundName when setting volume');
+        _logger.warning('No player found for $soundName when setting volume');
         
         if (PlatformUtils.isFireOS) {
-          print('🔥 FIRE OS: Missing player for $soundName - this indicates initialization failure');
+          _logger.fireOS('Missing player for $soundName - this indicates initialization failure');
         }
       }
     } catch (e) {
-      print('❌ AUDIO ERROR: Failed to set volume for $soundName: $e');
+      _logger.error('Failed to set volume for $soundName: $e');
       
       if (PlatformUtils.isFireOS) {
-        print('🔥 FIRE OS: Volume setting failed - known Fire tablet limitation');
-        print('🔥 FIRE OS: Attempting volume retry with delay...');
+        _logger.fireOS('Volume setting failed - known Fire tablet limitation');
+        _logger.fireOS('Attempting volume retry with delay...');
         
         try {
           await Future.delayed(const Duration(milliseconds: 50));
           final player = _continuousPlayers[soundName];
           if (player != null) {
             await player.setVolume(clampedVolume);
-            print('✅ FIRE OS: Volume retry succeeded for $soundName');
+            _logger.fireOS('Volume retry succeeded for $soundName');
           }
         } catch (retryError) {
-          print('❌ FIRE OS: Volume retry failed: $retryError');
+          _logger.fireOS('Volume retry failed: $retryError');
         }
       }
     }
@@ -317,17 +324,17 @@ class AssetAudioPlayer {
         player.stop();
         player.dispose();
         _continuousPlayers.remove(soundName);
-        print('🔊 DEBUG: Stopped continuous sound $soundName');
+        _logger.debug('Stopped continuous sound $soundName');
       }
     } catch (e) {
-      print('❌ Failed to stop continuous sound $soundName: $e');
+      _logger.error('Failed to stop continuous sound $soundName: $e');
     }
   }
 
   Future<void> _playSound(String soundName, {double volume = 0.5}) async {
     // In test mode, just log the sound play attempt without actual audio
     if (isTestMode) {
-      print('🧪 TEST: Would play $soundName at ${(volume * 100).toInt()}% volume');
+      _logger.test('Would play $soundName at ${(volume * 100).toInt()}% volume');
       return;
     }
     
@@ -339,19 +346,19 @@ class AssetAudioPlayer {
         await player.setVolume(volume);
         await player.seek(Duration.zero);
         await player.resume();
-        print('🔊 Playing: $soundName at ${(volume * 100).toInt()}% volume');
+        _logger.info('Playing: $soundName at ${(volume * 100).toInt()}% volume');
       } else {
-        print('❌ Sound not found: $soundName (skipping playback)');
+        _logger.error('Sound not found: $soundName (skipping playback)');
         return; // Exit early, don't try to play anything
       }
     } catch (e) {
-      print('❌ Audio playback error for $soundName: $e');
+      _logger.error('Audio playback error for $soundName: $e');
       return; // Exit early on any error
     }
   }
 
   void playCollisionSound() {
-    print('🔊 COLLISION: Wall hit');
+    _logger.debug('Wall hit', emoji: '🔊');
     _playCollisionSoundOverlap();
   }
   
@@ -372,49 +379,49 @@ class AssetAudioPlayer {
       await player.setVolume(0.4);
       await player.seek(Duration.zero);
       await player.resume();
-      print('🔊 Playing collision sound on player $_currentCollisionPlayer');
+      _logger.debug('Playing collision sound on player $_currentCollisionPlayer', emoji: '🔊');
     } catch (e) {
-      print('❌ Collision sound error: $e');
+      _logger.error('Collision sound error: $e');
     }
   }
 
   void playPickupSound() {
-    print('🔊 PICKUP: Item collected');
+    _logger.pickup('Item collected');
     _playSound('pickup', volume: 0.3);
   }
 
   void playDoorOpenSound() {
-    print('🔊 DOOR: Opening');
+    _logger.info('Door: Opening');
     _playSound('door', volume: 0.5);
   }
 
   void playLevelCompleteSound() {
-    print('🔊 SUCCESS: Level complete');
+    _logger.success('Level complete');
     _playSound('success', volume: 0.6);
   }
 
   void playMenuSelectSound() {
-    print('🔊 UI: Menu select (DISABLED - audio loading issue)');
+    _logger.info('UI: Menu select (DISABLED - audio loading issue)');
     // _playSound('click', volume: 0.3); // Temporarily disabled due to audio loading issues
   }
 
   void playDamageSound({double volume = 0.5}) {
-    print('🔊 HEALTH: Damage taken');
+    _logger.info('Health: Damage taken');
     _playSound('damage', volume: volume);
   }
 
   void playHealingSound({double volume = 0.6}) {
-    print('🔊 HEALTH: Health restored');
+    _logger.info('Health: Health restored');
     _playSound('healing', volume: volume);
   }
 
   void playCriticalHealthSound() {
-    print('🔊 HEALTH: Critical health warning');
+    _logger.info('Health: Critical health warning');
     _playSound('critical_health', volume: 0.8);
   }
 
   void playDeathSound() {
-    print('🔊 HEALTH: Player death');
+    _logger.info('Health: Player death');
     _playSound('death', volume: 0.9);
   }
 

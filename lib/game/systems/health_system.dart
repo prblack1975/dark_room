@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import '../audio/asset_audio_player.dart';
+import '../utils/game_logger.dart';
 import 'narration_system.dart';
 
 /// Manages player health for the Dark Room game
@@ -21,6 +22,7 @@ class HealthSystem extends Component {
   static const double criticalWarningCooldown = 10.0; // 10 seconds between warnings
   
   late AssetAudioPlayer _audioPlayer;
+  late final GameCategoryLogger _logger;
   
   // Reference to narration system
   NarrationSystem? _narrationSystem;
@@ -33,8 +35,10 @@ class HealthSystem extends Component {
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.health;
     _audioPlayer = AssetAudioPlayer();
-    print('❤️ HEALTH: System initialized with ${_currentHealth.toInt()}/100 health');
+    _logger.info('❤️ HEALTH: System initialized with ${_currentHealth.toInt()}/100 health');
   }
   
   /// Set reference to narration system
@@ -64,7 +68,7 @@ class HealthSystem extends Component {
     final previousHealth = _currentHealth;
     _currentHealth = (_currentHealth - amount).clamp(0.0, maxHealth);
     
-    print('❤️ HEALTH: Took ${amount.toInt()} damage${source != null ? ' from $source' : ''} (${_currentHealth.toInt()}/100)');
+    _logger.info('❤️ HEALTH: Took ${amount.toInt()} damage${source != null ? ' from $source' : ''} (${_currentHealth.toInt()}/100)');
     
     // Audio feedback for damage
     _playDamageSound(amount);
@@ -98,7 +102,7 @@ class HealthSystem extends Component {
     
     final actualHealing = _currentHealth - previousHealth;
     
-    print('❤️ HEALTH: Restored ${actualHealing.toInt()} health${source != null ? ' from $source' : ''} (${_currentHealth.toInt()}/100)');
+    _logger.info('❤️ HEALTH: Restored ${actualHealing.toInt()} health${source != null ? ' from $source' : ''} (${_currentHealth.toInt()}/100)');
     
     // Audio feedback for healing
     _playHealingSound(actualHealing);
@@ -115,7 +119,7 @@ class HealthSystem extends Component {
     final previousHealth = _currentHealth;
     _currentHealth = health.clamp(0.0, maxHealth);
     
-    print('❤️ HEALTH: Set to ${_currentHealth.toInt()}/100 (debug)');
+    _logger.info('❤️ HEALTH: Set to ${_currentHealth.toInt()}/100 (debug)');
     
     // Check state changes
     if (isCritical && previousHealth > criticalHealthThreshold) {
@@ -137,7 +141,7 @@ class HealthSystem extends Component {
   void resetHealth() {
     _currentHealth = maxHealth;
     _lastCriticalWarningTime = 0.0;
-    print('❤️ HEALTH: Reset to full health for new level');
+    _logger.info('❤️ HEALTH: Reset to full health for new level');
     onHealthChanged?.call(_currentHealth);
   }
   
@@ -235,7 +239,7 @@ class HealthSystem extends Component {
       );
     }
     
-    print('⚠️ HEALTH: Critical health warning triggered');
+    _logger.warning('HEALTH: Critical health warning triggered');
   }
   
   /// Trigger player death
@@ -254,12 +258,12 @@ class HealthSystem extends Component {
     // Notify game of death
     onPlayerDeath?.call();
     
-    print('💀 HEALTH: Player death triggered');
+    _logger.info('💀 HEALTH: Player death triggered');
   }
   
   /// Handle health artifact pickup
   void processHealthArtifact(String artifactName, double healingAmount, String description) {
-    print('❤️ HEALTH: Processing health artifact "$artifactName" (+${healingAmount.toInt()} health)');
+    _logger.healthPickup('Processing health artifact "$artifactName" (+${healingAmount.toInt()} health)');
     
     // Play pickup sound
     _audioPlayer.playPickupSound();

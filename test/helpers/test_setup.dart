@@ -8,6 +8,7 @@ import 'package:dark_room/game/audio/audio_manager.dart';
 import 'package:dark_room/game/audio/asset_audio_player.dart';
 import 'package:dark_room/game/dark_room_game.dart';
 import 'package:dark_room/game/levels/level.dart';
+import 'package:dark_room/game/utils/game_logger.dart';
 
 // Import the generated mocks
 import 'test_setup.mocks.dart';
@@ -40,6 +41,8 @@ class TestAudioSetup {
     when(_mockAudioManager!.setSoundBalance(any, any)).thenAnswer((_) async => {});
     when(_mockAudioManager!.playSound(any, volume: anyNamed('volume'))).thenAnswer((_) async => {});
     when(_mockAudioManager!.stopSound(any)).thenAnswer((_) async => {});
+    when(_mockAudioManager!.preloadFireOSFallbackSounds()).thenAnswer((_) => Future<void>.value());
+    when(_mockAudioManager!.isContinuouslyPlaying(any)).thenReturn(false);
     
     // Mock the calculate3DAudio method with realistic behavior
     when(_mockAudioManager!.calculate3DAudio(any, any, maxDistance: anyNamed('maxDistance')))
@@ -65,6 +68,36 @@ class TestAudioSetup {
         final direction = soundPos - playerPos;
         balance = (direction.x / maxDistance).clamp(-1.0, 1.0);
       }
+      
+      return AudioSpatialData(
+        volume: volume,
+        balance: balance,
+        distance: distance,
+      );
+    });
+    
+    // Mock the calculate3DAudioWithOcclusion method with similar behavior
+    when(_mockAudioManager!.calculate3DAudioWithOcclusion(any, any, any, maxDistance: anyNamed('maxDistance')))
+        .thenAnswer((invocation) {
+      // Extract arguments
+      final playerPos = invocation.positionalArguments[0] as Vector2;
+      final soundPos = invocation.positionalArguments[1] as Vector2;
+      final maxDistance = invocation.namedArguments[#maxDistance] as double? ?? 200.0;
+      
+      // Calculate realistic volume based on distance (with occlusion reduction)
+      final distance = playerPos.distanceTo(soundPos);
+      double volume = 1.0;
+      if (distance > maxDistance) {
+        volume = 0.0;
+      } else if (distance > 0) {
+        volume = (1.0 - (distance / maxDistance)).clamp(0.0, 1.0);
+        // Apply occlusion reduction
+        volume *= 0.7; // Simulate wall occlusion
+      }
+      
+      // Calculate balance (-1.0 to 1.0, left to right)
+      final dx = soundPos.x - playerPos.x;
+      final balance = (dx / maxDistance).clamp(-1.0, 1.0);
       
       return AudioSpatialData(
         volume: volume,
@@ -122,6 +155,10 @@ class UniversalTestSetup {
     // Ensure Flutter bindings are initialized
     TestWidgetsFlutterBinding.ensureInitialized();
     
+    // Initialize logging system in test mode
+    GameLogger.setTestInstance(GameLogger());
+    gameLogger.initialize();
+    
     // Setup audio mocking
     TestAudioSetup.setupTestEnvironment();
     
@@ -129,7 +166,7 @@ class UniversalTestSetup {
     _setupAllPluginMocks();
     
     _isSetup = true;
-    print('🧪 UNIVERSAL TEST: Complete testing environment initialized');
+    gameLogger.test.test('Complete testing environment initialized');
   }
   
   /// Setup all Flutter plugin mocks to prevent exceptions
@@ -189,14 +226,19 @@ class UniversalTestSetup {
       (MethodCall methodCall) async => null,
     );
     
-    print('🧪 UNIVERSAL TEST: All plugin mocks configured');
+    gameLogger.test.test('All plugin mocks configured');
   }
   
   /// Reset all mocks and clean up
   static void resetAllMocks() {
     TestAudioSetup.resetMocks();
+    
+    // Reset logging framework to default state
+    GameLogger.setTestInstance(null);
+    gameLogger.reset();
+    
     _isSetup = false;
-    print('🧪 UNIVERSAL TEST: All mocks reset');
+    // Note: Can't log the reset since we just reset the logger
   }
 }
 

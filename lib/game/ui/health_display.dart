@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../systems/health_system.dart';
+import '../utils/game_logger.dart';
 import 'settings_config.dart';
 
 /// Health display component for Dark Room game
@@ -12,6 +13,7 @@ import 'settings_config.dart';
 /// - Audio-first design with optional visual aid
 /// - Dark aesthetic compliance
 class HealthDisplay extends Component {
+  late final GameCategoryLogger _logger;
   late Paint _healthBarBackground;
   late Paint _healthBarFill;
   late Paint _criticalHealthPaint;
@@ -39,10 +41,12 @@ class HealthDisplay extends Component {
   Future<void> onLoad() async {
     super.onLoad();
     
+    gameLogger.initialize();
+    _logger = gameLogger.ui;
     _settings = SettingsConfig();
     _initializePaints();
     
-    print('❤️ HEALTH DISPLAY: Initialized with minimal visibility design');
+    _logger.info('❤️ HEALTH DISPLAY: Initialized with minimal visibility design');
   }
   
   void _initializePaints() {
@@ -99,7 +103,7 @@ class HealthDisplay extends Component {
     // Initialize with current health
     _updateHealthDisplay(_healthSystem!.currentHealth);
     
-    print('❤️ HEALTH DISPLAY: Connected to health system');
+    _logger.info('❤️ HEALTH DISPLAY: Connected to health system');
   }
   
   /// Update health display values
@@ -269,7 +273,7 @@ class HealthDisplay extends Component {
   /// Refresh display (for settings changes)
   void refresh() {
     _updateHealthBarColor();
-    print('❤️ HEALTH DISPLAY: Refreshed display settings');
+    _logger.info('❤️ HEALTH DISPLAY: Refreshed display settings');
   }
   
   /// Get debug information
@@ -293,7 +297,7 @@ class HealthDisplay extends Component {
     _currentHealth = 25.0; // Critical health for testing
     _isCritical = true;
     _triggerCriticalFlash();
-    print('❤️ HEALTH DISPLAY: Showing test critical health display');
+    _logger.info('❤️ HEALTH DISPLAY: Showing test critical health display');
   }
   
   /// Simulate health change for testing
@@ -304,6 +308,6 @@ class HealthDisplay extends Component {
       _triggerCriticalFlash();
     }
     
-    print('❤️ HEALTH DISPLAY: Simulated health change to ${newHealth.toInt()}');
+    _logger.info('❤️ HEALTH DISPLAY: Simulated health change to ${newHealth.toInt()}');
   }
 }

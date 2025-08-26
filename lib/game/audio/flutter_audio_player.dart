@@ -2,15 +2,20 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:math' as math;
+import '../utils/game_logger.dart';
 
 // Use audioplayers with generated tones for web compatibility
 class FlutterAudioPlayer {
   static final FlutterAudioPlayer _instance = FlutterAudioPlayer._internal();
   factory FlutterAudioPlayer() => _instance;
-  FlutterAudioPlayer._internal();
+  FlutterAudioPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
 
   final AudioPlayer _player = AudioPlayer();
   Timer? _soundTimer;
+  late final GameCategoryLogger _logger;
 
   // Generate a simple sine wave tone
   Uint8List generateTone(double frequency, int durationMs, double volume) {
@@ -38,7 +43,7 @@ class FlutterAudioPlayer {
     try {
       // For now, just provide audio feedback through console
       // In a full implementation, we would use the Web Audio API
-      print('🔊 Playing ${frequency.toInt()}Hz for ${durationMs}ms at ${(volume * 100).toInt()}% volume');
+      _logger.info('🔊 Playing ${frequency.toInt()}Hz for ${durationMs}ms at ${(volume * 100).toInt()}% volume');
       
       // Simulate sound duration
       _soundTimer?.cancel();
@@ -47,32 +52,32 @@ class FlutterAudioPlayer {
       });
       
     } catch (e) {
-      print('Audio playback error: $e');
+      _logger.error('Audio playback error: $e');
     }
   }
 
   void playCollisionSound() {
-    print('🔊 COLLISION: Wall hit sound');
+    _logger.info('🔊 COLLISION: Wall hit sound');
     playTone(frequency: 200.0, durationMs: 150, volume: 0.4);
   }
 
   void playPickupSound() {
-    print('🔊 PICKUP: Item collected chime');
+    _logger.info('🔊 PICKUP: Item collected chime');
     playTone(frequency: 1200.0, durationMs: 300, volume: 0.3);
   }
 
   void playDoorOpenSound() {
-    print('🔊 DOOR: Unlocking creak');
+    _logger.info('🔊 DOOR: Unlocking creak');
     playTone(frequency: 300.0, durationMs: 500, volume: 0.4);
   }
 
   void playLevelCompleteSound() {
-    print('🔊 SUCCESS: Level completed fanfare');
+    _logger.info('🔊 SUCCESS: Level completed fanfare');
     playTone(frequency: 800.0, durationMs: 200, volume: 0.4);
   }
 
   void playMenuSelectSound() {
-    print('🔊 UI: Menu selection beep');
+    _logger.info('🔊 UI: Menu selection beep');
     playTone(frequency: 1000.0, durationMs: 100, volume: 0.3);
   }
 

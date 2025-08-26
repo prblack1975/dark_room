@@ -1,13 +1,18 @@
 import 'dart:async';
+import '../utils/game_logger.dart';
 
 // Fallback web audio implementation using simple logging
 // Note: Real Web Audio API implementation would require package:web
 class WebAudioPlayer {
   static final WebAudioPlayer _instance = WebAudioPlayer._internal();
   factory WebAudioPlayer() => _instance;
-  WebAudioPlayer._internal();
+  WebAudioPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
 
   Timer? _currentSoundTimer;
+  late final GameCategoryLogger _logger;
 
   // Fallback implementation - logs audio instead of playing
   bool get audioContext => true;
@@ -23,12 +28,12 @@ class WebAudioPlayer {
       _currentSoundTimer?.cancel();
       
       // Fallback to console logging
-      print('🔊 BEEP: ${frequency.toInt()}Hz for ${durationMs}ms (Volume: ${(volume * 100).toInt()}%)');
+      _logger.info('🔊 BEEP: ${frequency.toInt()}Hz for ${durationMs}ms (Volume: ${(volume * 100).toInt()}%)');
       
     } catch (e) {
-      print('Audio error: $e');
+      _logger.error('Audio error: $e');
       // Fallback to console logging
-      print('🔊 BEEP: ${frequency.toInt()}Hz for ${durationMs}ms (Volume: ${(volume * 100).toInt()}%)');
+      _logger.info('🔊 BEEP: ${frequency.toInt()}Hz for ${durationMs}ms (Volume: ${(volume * 100).toInt()}%)');
     }
   }
 

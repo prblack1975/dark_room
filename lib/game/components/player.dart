@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import '../audio/asset_audio_player.dart';
 import '../systems/inventory_system.dart';
 import '../systems/health_system.dart';
+import '../utils/game_logger.dart';
 import 'wall.dart';
 import 'game_object.dart';
 
@@ -24,6 +25,9 @@ class Player extends PositionComponent with CollisionCallbacks {
   // Reference to health system for damage and healing
   HealthSystem? _healthSystem;
   
+  // Logger instance for this class
+  late final GameCategoryLogger _logger;
+  
   Player({required Vector2 position}) : super(
     position: position,
     size: Vector2.all(playerSize),
@@ -33,6 +37,9 @@ class Player extends PositionComponent with CollisionCallbacks {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    
+    gameLogger.initialize();
+    _logger = gameLogger.player;
     
     _audioPlayer = AssetAudioPlayer();
     _lastValidPosition = position.clone();
@@ -106,7 +113,7 @@ class Player extends PositionComponent with CollisionCallbacks {
       
       // Play collision sound with cooldown to prevent audio system overload
       if ((currentTime - _lastCollisionSoundTime) > 0.5) { // 500ms cooldown
-        print('🟥 DEBUG: COLLISION - Playing collision sound (cooldown: ${(currentTime - _lastCollisionSoundTime).toStringAsFixed(3)}s)');
+        _logger.debugCollision('Playing collision sound (cooldown: ${(currentTime - _lastCollisionSoundTime).toStringAsFixed(3)}s)');
         _audioPlayer.playCollisionSound();
         _lastCollisionSoundTime = currentTime;
       }
@@ -154,7 +161,7 @@ class Player extends PositionComponent with CollisionCallbacks {
   /// Take damage (for future NPC implementation)
   void takeDamage(double amount, {String? damageType, String? source}) {
     if (_healthSystem == null) {
-      print('⚠️ WARNING: Health system not available for damage');
+      _logger.warning('Health system not available for damage');
       return;
     }
     
@@ -175,10 +182,10 @@ class Player extends PositionComponent with CollisionCallbacks {
   void _checkForItemPickup() {
     if (_inventorySystem == null || parent == null) {
       if (_inventorySystem == null) {
-        print('⚠️ DEBUG: Inventory system is null');
+        _logger.debugWarning('Inventory system is null');
       }
       if (parent == null) {
-        print('⚠️ DEBUG: Player parent is null');
+        _logger.debugWarning('Player parent is null');
       }
       return;
     }
@@ -190,10 +197,10 @@ class Player extends PositionComponent with CollisionCallbacks {
                        !obj.isPickedUp);
     
     if (items.isNotEmpty && DateTime.now().millisecondsSinceEpoch % 2000 < 16) { // Debug every ~2 seconds
-      print('🔍 DEBUG: Found ${items.length} items near player');
+      _logger.debug('Found ${items.length} items near player', emoji: '🔍');
       for (final item in items) {
         final distance = position.distanceTo(item.position + item.size / 2);
-        print('  - ${item.name} at distance ${distance.toStringAsFixed(1)} (pickup radius: ${item.pickupRadius})');
+        _logger.debug('  - ${item.name} at distance ${distance.toStringAsFixed(1)} (pickup radius: ${item.pickupRadius})');
       }
     }
     
@@ -204,13 +211,13 @@ class Player extends PositionComponent with CollisionCallbacks {
       
       // Check if within this item's specific pickup radius
       if (distance <= item.pickupRadius) {
-        print('🎯 DEBUG: Player within pickup range of "${item.name}" (distance: ${distance.toStringAsFixed(1)}, radius: ${item.pickupRadius})');
+        _logger.debugTarget('Player within pickup range of "${item.name}" (distance: ${distance.toStringAsFixed(1)}, radius: ${item.pickupRadius})');
         
         // Create unique ID for this item to prevent duplicate pickups
         final itemId = '${item.name}_${item.position.x.toInt()}_${item.position.y.toInt()}';
         
         if (!_inventorySystem!.isItemPickedUp(itemId)) {
-          print('🎯 DEBUG: Attempting to pick up "${item.name}"');
+          _logger.debugTarget('Attempting to pick up "${item.name}"');
           
           // Handle different item types
           if (item.type == GameObjectType.healthArtifact) {
@@ -219,7 +226,7 @@ class Player extends PositionComponent with CollisionCallbacks {
             _processRegularItem(item, itemId, distance);
           }
         } else {
-          print('⚠️ DEBUG: Item "${item.name}" already picked up');
+          _logger.debugWarning('Item "${item.name}" already picked up');
         }
       }
     }
@@ -240,13 +247,13 @@ class Player extends PositionComponent with CollisionCallbacks {
     item.isActive = false;
     item.removeFromParent();
     
-    print('🎯 PICKUP: Player automatically picked up "${item.name}" at distance ${distance.toStringAsFixed(1)}');
+    _logger.pickup('Player automatically picked up "${item.name}" at distance ${distance.toStringAsFixed(1)}');
   }
   
   /// Process health artifact pickup
   void _processHealthArtifact(GameObject item, String itemId, double distance) {
     if (_healthSystem == null) {
-      print('⚠️ WARNING: Health system not available for health artifact pickup');
+      _logger.warning('Health system not available for health artifact pickup');
       return;
     }
     
@@ -265,6 +272,6 @@ class Player extends PositionComponent with CollisionCallbacks {
     item.isActive = false;
     item.removeFromParent();
     
-    print('❤️ PICKUP: Player automatically picked up health artifact "${item.name}" (+${item.healingAmount.toInt()} health) at distance ${distance.toStringAsFixed(1)}');
+    _logger.healthPickup('Player automatically picked up health artifact "${item.name}" (+${item.healingAmount.toInt()} health) at distance ${distance.toStringAsFixed(1)}');
   }
 }

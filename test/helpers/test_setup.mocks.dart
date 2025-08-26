@@ -397,6 +397,19 @@ class MockAudioManager extends _i1.Mock implements _i4.AudioManager {
   }
 
   @override
+  bool get isTestMode =>
+      (super.noSuchMethod(Invocation.getter(#isTestMode), returnValue: false)
+          as bool);
+
+  @override
+  bool isContinuouslyPlaying(String? soundName) =>
+      (super.noSuchMethod(
+            Invocation.method(#isContinuouslyPlaying, [soundName]),
+            returnValue: false,
+          )
+          as bool);
+
+  @override
   _i3.Future<void> preloadSound(
     String? soundName,
     String? assetPath, {
@@ -408,6 +421,15 @@ class MockAudioManager extends _i1.Mock implements _i4.AudioManager {
               [soundName, assetPath],
               {#loop: loop},
             ),
+            returnValue: _i3.Future<void>.value(),
+            returnValueForMissingStub: _i3.Future<void>.value(),
+          )
+          as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> preloadFireOSFallbackSounds() =>
+      (super.noSuchMethod(
+            Invocation.method(#preloadFireOSFallbackSounds, []),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
           )
@@ -596,6 +618,11 @@ class MockAssetAudioPlayer extends _i1.Mock implements _i9.AssetAudioPlayer {
   MockAssetAudioPlayer() {
     _i1.throwOnMissingStub(this);
   }
+
+  @override
+  bool get isTestMode =>
+      (super.noSuchMethod(Invocation.getter(#isTestMode), returnValue: false)
+          as bool);
 
   @override
   _i3.Future<void> startContinuousSound(String? soundName, String? assetPath) =>

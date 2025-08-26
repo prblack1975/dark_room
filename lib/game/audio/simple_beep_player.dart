@@ -1,13 +1,18 @@
 import 'package:flutter/services.dart';
 import 'dart:async';
+import '../utils/game_logger.dart';
 
 class SimpleBeepPlayer {
   static final SimpleBeepPlayer _instance = SimpleBeepPlayer._internal();
   factory SimpleBeepPlayer() => _instance;
-  SimpleBeepPlayer._internal();
+  SimpleBeepPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
 
   Timer? _soundTimer;
   bool _isEnabled = false;
+  late final GameCategoryLogger _logger;
 
   // Enable audio by triggering a system sound first (requires user interaction)
   Future<void> enable() async {
@@ -17,9 +22,9 @@ class SimpleBeepPlayer {
       // Try to play a system sound to enable audio context
       await SystemSound.play(SystemSoundType.click);
       _isEnabled = true;
-      print('✅ Audio enabled! You should now hear sounds.');
+      _logger.success('Audio enabled! You should now hear sounds.');
     } catch (e) {
-      print('⚠️ Audio enable failed: $e');
+      _logger.warning('Audio enable failed: $e');
     }
   }
 
@@ -35,7 +40,7 @@ class SimpleBeepPlayer {
       
       // Play system sound
       await SystemSound.play(soundType);
-      print('🔊 $name: System ${soundType.toString()} sound');
+      _logger.info('🔊 $name: System ${soundType.toString()} sound');
       
       // For web compatibility, also try HapticFeedback
       if (soundType == SystemSoundType.click) {
@@ -45,12 +50,12 @@ class SimpleBeepPlayer {
       }
       
     } catch (e) {
-      print('❌ Sound error for $name: $e');
+      _logger.error('Sound error for $name: $e');
     }
   }
 
   void playCollisionSound() {
-    print('🔊 COLLISION: Wall hit');
+    _logger.info('🔊 COLLISION: Wall hit');
     playBeep(
       name: 'Collision',
       soundType: SystemSoundType.click,
@@ -59,7 +64,7 @@ class SimpleBeepPlayer {
   }
 
   void playPickupSound() {
-    print('🔊 PICKUP: Item collected');
+    _logger.info('🔊 PICKUP: Item collected');
     playBeep(
       name: 'Pickup',
       soundType: SystemSoundType.alert,
@@ -68,7 +73,7 @@ class SimpleBeepPlayer {
   }
 
   void playDoorOpenSound() {
-    print('🔊 DOOR: Opening');
+    _logger.info('🔊 DOOR: Opening');
     playBeep(
       name: 'Door',
       soundType: SystemSoundType.alert,
@@ -77,7 +82,7 @@ class SimpleBeepPlayer {
   }
 
   void playLevelCompleteSound() {
-    print('🔊 SUCCESS: Level complete');
+    _logger.info('🔊 SUCCESS: Level complete');
     playBeep(
       name: 'Success',
       soundType: SystemSoundType.alert,
@@ -94,7 +99,7 @@ class SimpleBeepPlayer {
   }
 
   void playMenuSelectSound() {
-    print('🔊 UI: Menu select');
+    _logger.info('🔊 UI: Menu select');
     playBeep(
       name: 'Menu',
       soundType: SystemSoundType.click,

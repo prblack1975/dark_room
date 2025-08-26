@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'game_object.dart';
 import 'player.dart';
 import '../systems/inventory_system.dart';
+import '../utils/game_logger.dart';
 
 /// Debug overlay for visualizing item pickup ranges and interactions
 /// 
@@ -11,7 +12,8 @@ import '../systems/inventory_system.dart';
 /// - Highlights items in pickup range
 /// - Displays inventory contents
 /// - Shows pickup distance measurements
-class PickupDebugOverlay extends Component with HasGameRef {
+class PickupDebugOverlay extends Component with HasGameReference {
+  late final GameCategoryLogger _logger;
   bool _showPickupRanges = false;
   bool _showInventoryInfo = false;
   bool _showDistanceInfo = false;
@@ -23,11 +25,18 @@ class PickupDebugOverlay extends Component with HasGameRef {
   static const Color playerColor = Color(0xFF00FFFF); // Cyan
   
   @override
+  void onLoad() async {
+    super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.player;
+  }
+
+  @override
   void render(Canvas canvas) {
     if (!_showPickupRanges && !_showInventoryInfo && !_showDistanceInfo) return;
     
-    final camera = game.camera;
-    final viewfinder = camera.viewfinder;
+    // final camera = game.camera;
+    // final viewfinder = camera.viewfinder;  // Reserved for camera-based calculations
     
     // Get components we need
     final player = _findPlayer();
@@ -224,19 +233,19 @@ class PickupDebugOverlay extends Component with HasGameRef {
   /// Toggle pickup range visualization
   void togglePickupRanges() {
     _showPickupRanges = !_showPickupRanges;
-    print('🔍 DEBUG: Pickup ranges ${_showPickupRanges ? 'enabled' : 'disabled'}');
+    _logger.debug('🔍 DEBUG: Pickup ranges ${_showPickupRanges ? 'enabled' : 'disabled'}');
   }
   
   /// Toggle inventory information display
   void toggleInventoryInfo() {
     _showInventoryInfo = !_showInventoryInfo;
-    print('📦 DEBUG: Inventory info ${_showInventoryInfo ? 'enabled' : 'disabled'}');
+    _logger.debug('📦 DEBUG: Inventory info ${_showInventoryInfo ? 'enabled' : 'disabled'}');
   }
   
   /// Toggle distance information display
   void toggleDistanceInfo() {
     _showDistanceInfo = !_showDistanceInfo;
-    print('📏 DEBUG: Distance info ${_showDistanceInfo ? 'enabled' : 'disabled'}');
+    _logger.debug('📏 DEBUG: Distance info ${_showDistanceInfo ? 'enabled' : 'disabled'}');
   }
   
   /// Enable all debug features
@@ -244,7 +253,7 @@ class PickupDebugOverlay extends Component with HasGameRef {
     _showPickupRanges = true;
     _showInventoryInfo = true;
     _showDistanceInfo = true;
-    print('🔍 DEBUG: All pickup debug features enabled');
+    _logger.debug('🔍 DEBUG: All pickup debug features enabled');
   }
   
   /// Disable all debug features
@@ -252,7 +261,7 @@ class PickupDebugOverlay extends Component with HasGameRef {
     _showPickupRanges = false;
     _showInventoryInfo = false;
     _showDistanceInfo = false;
-    print('🔍 DEBUG: All pickup debug features disabled');
+    _logger.debug('🔍 DEBUG: All pickup debug features disabled');
   }
   
   /// Get current debug state

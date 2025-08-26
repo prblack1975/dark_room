@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'game/dark_room_game.dart';
 import 'game/ui/menu/main_menu_screen.dart';
 import 'game/ui/touch_controls.dart';
+import 'game/utils/game_logger.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,12 +32,20 @@ class GameNavigator extends StatefulWidget {
 }
 
 class _GameNavigatorState extends State<GameNavigator> {
+  late final GameCategoryLogger _logger;
   bool _showingMenu = true;
   DarkRoomGame? _game;
   String? _currentLevelId;
 
+  @override
+  void initState() {
+    super.initState();
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+  }
+
   void _onLevelSelected(String levelId) {
-    print('🎯 NAVIGATOR: Starting level: $levelId');
+    _logger.debug('🎯 NAVIGATOR: Starting level: $levelId');
     setState(() {
       _currentLevelId = levelId;
       _showingMenu = false;
@@ -45,7 +54,7 @@ class _GameNavigatorState extends State<GameNavigator> {
   }
 
   void _returnToMenu() {
-    print('🔙 NAVIGATOR: Returning to menu');
+    _logger.debug('🔙 NAVIGATOR: Returning to menu');
     setState(() {
       _showingMenu = true;
       _game = null;
@@ -84,9 +93,13 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  late final GameCategoryLogger _logger;
+
   @override
   void initState() {
     super.initState();
+    gameLogger.initialize();
+    _logger = gameLogger.system;
     _waitForGameAndLoadLevel();
   }
 
@@ -95,7 +108,7 @@ class _GameScreenState extends State<GameScreen> {
     if (widget.game.isInitialized) {
       _loadSelectedLevel();
     } else {
-      print('⏳ SCREEN: Waiting for game initialization...');
+      _logger.debug('⏳ SCREEN: Waiting for game initialization...');
       // Wait for next frame and check again
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -106,7 +119,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _loadSelectedLevel() {
-    print('🎯 SCREEN: Game ready, loading level ${widget.levelId}');
+    _logger.debug('🎯 SCREEN: Game ready, loading level ${widget.levelId}');
     widget.game.loadLevelById(widget.levelId);
   }
 

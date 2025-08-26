@@ -1,8 +1,15 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'game_logger.dart';
 
 /// Utility class for platform detection and mobile-specific adaptations
 class PlatformUtils {
+  
+  // Logger instance for this class
+  static final GameCategoryLogger _logger = (() {
+    gameLogger.initialize();
+    return gameLogger.platform;
+  })();
   
   /// Returns true if running on a mobile or tablet device
   static bool get isMobileOrTablet {
@@ -28,20 +35,20 @@ class PlatformUtils {
   /// Set manual Fire OS detection override for testing
   static void setFireOSOverride(bool? override) {
     _fireOSOverride = override;
-    print('🔥 FIRE OS: Manual override set to $override');
+    _logger.fireOS('Manual override set to $override');
   }
   
   /// Enable Fire OS testing mode (for debugging on non-Fire devices)
   static void enableFireOSTestingMode() {
     setFireOSOverride(true);
-    print('🔥 FIRE OS: Testing mode enabled - all Fire OS specific code will activate');
-    print('🔥 FIRE OS: This forces Fire tablet compatibility mode');
+    _logger.fireOS('Testing mode enabled - all Fire OS specific code will activate');
+    _logger.fireOS('This forces Fire tablet compatibility mode');
   }
   
   /// Disable Fire OS testing mode
   static void disableFireOSTestingMode() {
     setFireOSOverride(null);
-    print('🔥 FIRE OS: Testing mode disabled - using automatic detection');
+    _logger.fireOS('Testing mode disabled - using automatic detection');
   }
   
   /// Returns true if running on Amazon Fire OS (detected via multiple methods)
@@ -50,7 +57,7 @@ class PlatformUtils {
     
     // Check manual override first (for testing)
     if (_fireOSOverride != null) {
-      print('🔥 FIRE OS: Using manual override: ${_fireOSOverride}');
+      _logger.fireOS('Using manual override: $_fireOSOverride');
       return _fireOSOverride!;
     }
     
@@ -64,11 +71,11 @@ class PlatformUtils {
           deviceModel.contains('kindle') ||
           deviceManufacturer.contains('amazon') ||
           deviceModel.contains('kf')) {
-        print('🔥 FIRE OS: Detected via environment variables');
+        _logger.fireOS('Detected via environment variables');
         return true;
       }
     } catch (e) {
-      print('🔥 FIRE OS: Environment detection failed: $e');
+      _logger.fireOS('Environment detection failed: $e');
     }
     
     // Method 2: Check for Fire OS specific characteristics
@@ -80,16 +87,16 @@ class PlatformUtils {
       
       // Fire OS might have amazon-specific paths or users
       if (path.contains('amazon') || user.contains('amazon')) {
-        print('🔥 FIRE OS: Detected via system characteristics');
+        _logger.fireOS('Detected via system characteristics');
         return true;
       }
     } catch (e) {
-      print('🔥 FIRE OS: System characteristics check failed: $e');
+      _logger.fireOS('System characteristics check failed: $e');
     }
     
     // Method 3: Fallback - assume Fire OS if we're on Android and have audio issues
     // This is a heuristic and will be refined based on actual testing
-    print('🔥 FIRE OS: No definitive detection - assuming standard Android');
+    _logger.fireOS('No definitive detection - assuming standard Android');
     return false;
   }
   
@@ -147,14 +154,14 @@ class PlatformUtils {
   /// Get detailed platform info for audio debugging
   static String get detailedPlatformInfo {
     final buffer = StringBuffer();
-    buffer.write('Platform: ${platformName}');
+    buffer.write('Platform: $platformName');
     
     if (!kIsWeb && Platform.isAndroid) {
-      buffer.write('\nFire OS Detected: ${isFireOS}');
-      buffer.write('\nFire OS Mode: ${shouldUseFireOSMode}');
-      buffer.write('\nManual Override: ${_fireOSOverride}');
-      buffer.write('\nAudio Limitations: ${hasAudioLimitations}');
-      buffer.write('\nMax Audio Players: ${maxConcurrentAudioPlayers}');
+      buffer.write('\nFire OS Detected: $isFireOS');
+      buffer.write('\nFire OS Mode: $shouldUseFireOSMode');
+      buffer.write('\nManual Override: $_fireOSOverride');
+      buffer.write('\nAudio Limitations: $hasAudioLimitations');
+      buffer.write('\nMax Audio Players: $maxConcurrentAudioPlayers');
     }
     
     return buffer.toString();

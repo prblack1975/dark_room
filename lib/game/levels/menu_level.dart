@@ -7,13 +7,18 @@ import 'escape_room_level.dart';
 import 'laboratory_level.dart';
 import 'basement_level.dart';
 import 'office_complex_level.dart';
+import '../utils/game_logger.dart';
 
 class MenuLevel extends Level {
+  late final GameCategoryLogger _logger;
   MenuLevel() : super(
     name: 'Dark Room: Level Selection Hub',
     description: 'Choose your escape challenge - progress through increasingly complex audio navigation puzzles',
     spawn: Vector2(400, 600),
-  );
+  ) {
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+  }
   
   @override
   Future<void> buildLevel() async {
@@ -181,33 +186,33 @@ class MenuLevel extends Level {
     if (object.type == GameObjectType.interactable) {
       switch (object.name) {
         case 'tutorial_portal':
-          print('🟡 DEBUG: Loading Tutorial Level');
+          _logger.debug('🟡 DEBUG: Loading Tutorial Level');
           narrationSystem.narrateLevelTransition('Entering Tutorial: First Steps. Learn the fundamentals of audio navigation.');
-          gameRef.loadLevel(TutorialLevel());
+          game.loadLevel(TutorialLevel());
           break;
           
         case 'escape_portal':
-          print('🟡 DEBUG: Loading Simple Escape Level');
+          _logger.debug('🟡 DEBUG: Loading Simple Escape Level');
           narrationSystem.narrateLevelTransition('Entering Simple Escape: The Antechamber. Navigate using strategic audio landmarks.');
-          gameRef.loadLevel(EscapeRoomLevel());
+          game.loadLevel(EscapeRoomLevel());
           break;
           
         case 'laboratory_portal':
-          print('🟡 DEBUG: Loading Laboratory Level');
+          _logger.debug('🟡 DEBUG: Loading Laboratory Level');
           narrationSystem.narrateLevelTransition('Entering Laboratory: Chemical Analysis Wing. Navigate complex multi-room facility.');
-          gameRef.loadLevel(LaboratoryLevel());
+          game.loadLevel(LaboratoryLevel());
           break;
           
         case 'basement_portal':
-          print('🟡 DEBUG: Loading Basement Level');
+          _logger.debug('🟡 DEBUG: Loading Basement Level');
           narrationSystem.narrateLevelTransition('Entering Basement: Industrial Underground. Master maze navigation with industrial sounds.');
-          gameRef.loadLevel(BasementLevel());
+          game.loadLevel(BasementLevel());
           break;
           
         case 'office_portal':
-          print('🟡 DEBUG: Loading Office Complex Level');
+          _logger.debug('🟡 DEBUG: Loading Office Complex Level');
           narrationSystem.narrateLevelTransition('Entering Office Complex: Corporate Tower. Ultimate challenge with varied equipment sounds.');
-          gameRef.loadLevel(OfficeComplexLevel());
+          game.loadLevel(OfficeComplexLevel());
           break;
           
         default:

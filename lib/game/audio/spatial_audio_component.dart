@@ -3,6 +3,7 @@ import 'audio_manager.dart';
 import '../components/player.dart';
 import '../components/wall.dart';
 import '../levels/level.dart';
+import '../utils/game_logger.dart';
 
 class SpatialAudioComponent extends Component {
   final String soundName;
@@ -14,6 +15,7 @@ class SpatialAudioComponent extends Component {
   bool _hasStartedPlaying = false;
   Vector2? _lastPlayerPosition;
   double _lastVolume = 0.0;
+  late final GameCategoryLogger _logger;
   
   SpatialAudioComponent({
     required this.soundName,
@@ -25,6 +27,8 @@ class SpatialAudioComponent extends Component {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
     _audioManager = AudioManager();
     
     // Preload and immediately start playing the sound
@@ -35,7 +39,7 @@ class SpatialAudioComponent extends Component {
     await _audioManager.startContinuousSound(soundName);
     _hasStartedPlaying = true;
     
-    print('🔊 DEBUG: Started continuous playback for $soundName');
+    _logger.debug('Started continuous playback for $soundName');
   }
   
   @override
@@ -97,7 +101,7 @@ class SpatialAudioComponent extends Component {
           ((maxDistance - distance) / maxDistance).clamp(0.0, 1.0) : 0.0;
       
       if ((currentVolume - _lastVolume).abs() > 0.1) {
-        print('🔊 DEBUG: $soundName volume: ${currentVolume.toStringAsFixed(2)} (distance: ${distance.toStringAsFixed(1)})');
+        _logger.debug('$soundName volume: ${currentVolume.toStringAsFixed(2)} (distance: ${distance.toStringAsFixed(1)})');
         _lastVolume = currentVolume;
       }
     }
@@ -107,13 +111,13 @@ class SpatialAudioComponent extends Component {
   // Keep only for compatibility if needed elsewhere
   void play() {
     // Sound is always playing - this is a no-op for always-playing sounds
-    print('🔊 DEBUG: play() called on $soundName - already continuously playing');
+    _logger.debug('play() called on $soundName - already continuously playing');
   }
   
   void stop() {
     // For always-playing sounds, we just set volume to zero instead of stopping
     _audioManager.setSoundVolume(soundName, 0.0);
-    print('🔊 DEBUG: stop() called on $soundName - muted instead of stopped');
+    _logger.debug('stop() called on $soundName - muted instead of stopped');
   }
   
   /// Get walls from the parent level for occlusion calculations
@@ -143,7 +147,7 @@ class SpatialAudioComponent extends Component {
   void onRemove() {
     // Only stop when component is completely removed
     _audioManager.stopSound(soundName);
-    print('🔊 DEBUG: Stopped $soundName on component removal');
+    _logger.debug('Stopped $soundName on component removal');
     super.onRemove();
   }
 }

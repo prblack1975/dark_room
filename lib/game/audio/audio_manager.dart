@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../components/wall.dart';
 import '../utils/line_intersection.dart';
 import '../utils/platform_utils.dart';
+import '../utils/game_logger.dart';
 import 'asset_audio_player.dart';
 
 class AudioManager {
@@ -11,7 +12,10 @@ class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
   
   factory AudioManager() => _testInstance ?? _instance;
-  AudioManager._internal();
+  AudioManager._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
   
   /// Set a test instance (used during testing to inject mocks)
   static void setTestInstance(AudioManager? testInstance) {
@@ -31,6 +35,9 @@ class AudioManager {
   final Map<String, bool> _isContinuousPlaying = {};
   final Map<String, double> _currentVolumes = {};
   
+  // Logger instance for this class
+  late final GameCategoryLogger _logger;
+  
   // Use the working AssetAudioPlayer for continuous sounds
   final AssetAudioPlayer _assetAudioPlayer = AssetAudioPlayer();
   
@@ -49,7 +56,7 @@ class AudioManager {
     
     // Enhanced logging for Fire OS
     if (PlatformUtils.isFireOS) {
-      print('🔥 FIRE OS: Preloading sound $soundName from $assetPath (loop: $loop)');
+      _logger.fireOS('Preloading sound $soundName from $assetPath (loop: $loop)');
     }
     
     try {
@@ -66,12 +73,12 @@ class AudioManager {
         _players[soundName] = player;
         
         if (PlatformUtils.isFireOS) {
-          print('✅ FIRE OS: Successfully preloaded $soundName');
+          _logger.fireOS('Successfully preloaded $soundName');
         }
       } catch (e) {
-        print('Failed to create/configure AudioPlayer for $soundName: $e');
+        _logger.error('Failed to create/configure AudioPlayer for $soundName: $e');
         if (PlatformUtils.isFireOS) {
-          print('❌ FIRE OS: AudioPlayer creation failed for $soundName - this will limit fallback audio');
+          _logger.fireOS('AudioPlayer creation failed for $soundName - this will limit fallback audio');
         }
         // Store null player but keep the sound registered for game logic
         _players[soundName] = null;
@@ -79,9 +86,9 @@ class AudioManager {
       
       _isLooping[soundName] = loop;
     } catch (e) {
-      print('Failed to load audio: $soundName from $assetPath - $e');
+      _logger.error('Failed to load audio: $soundName from $assetPath - $e');
       if (PlatformUtils.isFireOS) {
-        print('❌ FIRE OS: Complete preload failure for $soundName');
+        _logger.fireOS('Complete preload failure for $soundName');
       }
       // Store null player but maintain sound registration for game logic
       _players[soundName] = null;
@@ -93,7 +100,7 @@ class AudioManager {
   Future<void> preloadFireOSFallbackSounds() async {
     if (!PlatformUtils.isFireOS) return;
     
-    print('🔥 FIRE OS: Preloading fallback sounds...');
+    _logger.fireOS('Preloading fallback sounds...');
     
     final fallbackSounds = [
       'click.mp3',
@@ -108,7 +115,7 @@ class AudioManager {
       await preloadSound(soundFile, 'audio/interaction/$soundFile');
     }
     
-    print('✅ FIRE OS: Fallback sounds preloading completed');
+    _logger.fireOS('Fallback sounds preloading completed');
   }
 
   Future<void> playSound(String soundName, {double volume = 1.0}) async {
@@ -247,11 +254,11 @@ class AudioManager {
     if (!(_isContinuousPlaying[soundName] ?? false)) {
       _isContinuousPlaying[soundName] = true;
       _currentVolumes[soundName] = 0.0;
-      print('🔊 DEBUG: Started continuous playback for $soundName');
+      _logger.debug('Started continuous playback for $soundName', emoji: '🔊');
       
       // Skip actual audio playback in test mode
       if (isTestMode) {
-        print('🔊 DEBUG: Test mode - skipping actual audio playback for $soundName');
+        _logger.test('Test mode - skipping actual audio playback for $soundName');
         return;
       }
       
@@ -259,9 +266,9 @@ class AudioManager {
       try {
         final assetPath = 'audio/interaction/$soundName';
         await _assetAudioPlayer.startContinuousSound(soundName, assetPath);
-        print('🔊 DEBUG: Successfully started continuous audio via AssetAudioPlayer for $soundName');
+        _logger.debug('Successfully started continuous audio via AssetAudioPlayer for $soundName', emoji: '🔊');
       } catch (e) {
-        print('⚠️ DEBUG: AssetAudioPlayer failed for $soundName: $e');
+        _logger.debugWarning('AssetAudioPlayer failed for $soundName: $e');
         // Continue with game logic even if playback fails
       }
     }
@@ -351,9 +358,7 @@ class AudioManager {
         targetVolume = math.max(targetVolume, minCloseVolume);
       }
       
-      print('🔊 DEBUG: Proximity override for $soundName - distance: ${distance.toStringAsFixed(1)}, '
-            'base: ${baseAudio.volume.toStringAsFixed(2)}, occluded: ${spatialData.volume.toStringAsFixed(2)}, '
-            'final: ${targetVolume.toStringAsFixed(2)}');
+      _logger.debug('Proximity override for $soundName - distance: ${distance.toStringAsFixed(1)}, base: ${baseAudio.volume.toStringAsFixed(2)}, occluded: ${spatialData.volume.toStringAsFixed(2)}, final: ${targetVolume.toStringAsFixed(2)}', emoji: '🔊');
     }
     
     // Smooth volume transitions to avoid audio artifacts
@@ -380,10 +385,7 @@ class AudioManager {
       
       // Debug output for occlusion effects
       if (spatialData.wallCount > 0) {
-        print('🔇 DEBUG: $soundName occluded by ${spatialData.wallCount} walls - '
-              'volume: ${newVolume.toStringAsFixed(2)} '
-              '(occlusion: ${(spatialData.occlusionStrength * 100).toStringAsFixed(0)}%, '
-              'muffling: ${(spatialData.mufflingStrength * 100).toStringAsFixed(0)}%)');
+        _logger.debug('$soundName occluded by ${spatialData.wallCount} walls - volume: ${newVolume.toStringAsFixed(2)} (occlusion: ${(spatialData.occlusionStrength * 100).toStringAsFixed(0)}%, muffling: ${(spatialData.mufflingStrength * 100).toStringAsFixed(0)}%)', emoji: '🔇');
       }
     }
   }
@@ -406,7 +408,7 @@ class AudioManager {
         return; // Success with AssetAudioPlayer
       }
     } catch (e) {
-      print('⚠️ DEBUG: AssetAudioPlayer volume setting failed for $soundName: $e');
+      _logger.debugWarning('AssetAudioPlayer volume setting failed for $soundName: $e');
     }
     
     // Fallback to original AudioPlayer method
@@ -417,7 +419,7 @@ class AudioManager {
       } else {
         // Only print occasionally to avoid spam, but confirm volume is being calculated
         if ((clampedVolume * 100).round() % 10 == 0 || clampedVolume == 0.0 || clampedVolume == 1.0) {
-          print('🔊 DEBUG: Volume calculated for $soundName: ${clampedVolume.toStringAsFixed(2)} (audio unavailable)');
+          _logger.debug('Volume calculated for $soundName: ${clampedVolume.toStringAsFixed(2)} (audio unavailable)', emoji: '🔊');
         }
       }
     } catch (e) {

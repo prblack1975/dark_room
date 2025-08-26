@@ -1,9 +1,15 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/game_logger.dart';
 
 class LevelProgressManager {
   static final LevelProgressManager _instance = LevelProgressManager._internal();
   factory LevelProgressManager() => _instance;
-  LevelProgressManager._internal();
+  LevelProgressManager._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+  }
+  
+  late final GameCategoryLogger _logger;
 
   static const String _completedLevelsKey = 'completed_levels';
   static const String _levelStatsPrefix = 'level_stats_';
@@ -58,7 +64,7 @@ class LevelProgressManager {
     if (!completedLevels.contains(levelId)) {
       completedLevels.add(levelId);
       await prefs.setStringList(_completedLevelsKey, completedLevels);
-      print('🏆 PROGRESS: Level "$levelId" marked as completed');
+      _logger.info('🏆 PROGRESS: Level "$levelId" marked as completed');
     }
     
     if (completionTime != null || attempts != null || healthRemaining != null) {
@@ -136,7 +142,7 @@ class LevelProgressManager {
       await prefs.setString('${statsKey}_first_completion', DateTime.now().toIso8601String());
     }
     
-    print('📊 PROGRESS: Saved stats for level "$levelId" - Time: ${completionTime?.inSeconds}s, Attempts: $attempts, Health: $healthRemaining%');
+    _logger.info('📊 PROGRESS: Saved stats for level "$levelId" - Time: ${completionTime?.inSeconds}s, Attempts: $attempts, Health: $healthRemaining%');
   }
 
   Future<void> resetProgress() async {
@@ -151,7 +157,7 @@ class LevelProgressManager {
       await prefs.remove('${statsKey}_first_completion');
     }
     
-    print('🔄 PROGRESS: All progress data has been reset');
+    _logger.process('PROGRESS: All progress data has been reset');
   }
 
   Future<Map<String, dynamic>> getAllLevelData() async {
@@ -173,14 +179,14 @@ class LevelProgressManager {
   }
 
   void printDebugInfo() async {
-    print('🐛 PROGRESS DEBUG: Current progress state:');
+    _logger.debug('🐛 PROGRESS DEBUG: Current progress state:');
     final completedLevels = await getCompletedLevels();
-    print('   Completed levels: $completedLevels');
+    _logger.debug('   Completed levels: $completedLevels');
     
     for (String levelId in _levelIds) {
       final unlocked = await isLevelUnlocked(levelId);
       final completed = await isLevelCompleted(levelId);
-      print('   $levelId: unlocked=$unlocked, completed=$completed');
+      _logger.debug('   $levelId: unlocked=$unlocked, completed=$completed');
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import '../audio/audio_manager.dart';
 import '../utils/platform_utils.dart';
+import '../utils/game_logger.dart';
 import 'wall.dart';
 
 enum GameObjectType {
@@ -19,6 +20,8 @@ class GameObject extends PositionComponent with CollisionCallbacks {
   final String description;
   final String? atmosphericDescription; // Enhanced description for narration
   bool isActive = true;
+  
+  late final GameCategoryLogger _logger;
   
   // For items
   bool isPickedUp = false;
@@ -43,8 +46,9 @@ class GameObject extends PositionComponent with CollisionCallbacks {
   // Fire OS fallback system for when continuous audio fails
   bool _continuousAudioFailed = false;
   double _lastFallbackSoundTime = 0.0;
-  double _fallbackSoundInterval = 2.0; // Play fallback sounds every 2 seconds when close
-  double _lastProximityVolume = 0.0;
+  final double _fallbackSoundInterval = 2.0; // Play fallback sounds every 2 seconds when close
+  // ignore: unused_field
+  double _lastProximityVolume = 0.0; // Will be used for advanced audio fallback
   
   GameObject({
     required this.type,
@@ -66,6 +70,9 @@ class GameObject extends PositionComponent with CollisionCallbacks {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    
+    gameLogger.initialize();
+    _logger = gameLogger.system;
     
     // Add hitbox for collision detection
     add(RectangleHitbox(
@@ -145,7 +152,7 @@ class GameObject extends PositionComponent with CollisionCallbacks {
     if (!_hasInitializedAudio) {
       audioManager.startContinuousSound(soundFile!);
       _hasInitializedAudio = true;
-      print('🔊 DEBUG: Initialized continuous audio for ${soundFile!} at ${position}');
+      _logger.debug('Initialized continuous audio for ${soundFile!} at $position', emoji: '🔊');
     }
     
     // Always update volume based on distance - never stop the sound
@@ -173,18 +180,18 @@ class GameObject extends PositionComponent with CollisionCallbacks {
       final isAlreadyPlaying = audioManager.isContinuouslyPlaying(soundFile!);
       
       if (isAlreadyPlaying) {
-        print('🔊 GAME OBJECT: Audio for ${soundFile!} already initialized by Level');
+        _logger.info('🔊 GAME OBJECT: Audio for ${soundFile!} already initialized by Level');
         _hasInitializedAudio = true;
       } else {
         try {
-          print('🔊 GAME OBJECT: Level did not initialize ${soundFile!}, initializing now');
+          _logger.info('🔊 GAME OBJECT: Level did not initialize ${soundFile!}, initializing now');
           await audioManager.startContinuousSound(soundFile!);
           _hasInitializedAudio = true;
-          print('✅ GAME OBJECT: Successfully initialized continuous audio for ${soundFile!}');
+          _logger.success('GAME OBJECT: Successfully initialized continuous audio for ${soundFile!}');
         } catch (e) {
-          print('❌ GAME OBJECT: Failed to initialize continuous audio for ${soundFile!}: $e');
+          _logger.error('GAME OBJECT: Failed to initialize continuous audio for ${soundFile!}: $e');
           if (PlatformUtils.shouldUseFireOSMode) {
-            print('🔥 FIRE OS: Marking continuous audio as failed, enabling fallback mode');
+            _logger.fireOS('Marking continuous audio as failed, enabling fallback mode');
             _continuousAudioFailed = true;
           }
           _hasInitializedAudio = true; // Don't keep retrying
@@ -221,9 +228,9 @@ class GameObject extends PositionComponent with CollisionCallbacks {
           maxDistance: soundRadius,
         );
       } catch (e) {
-        print('❌ GAME OBJECT: Continuous audio update failed for ${soundFile!}: $e');
+        _logger.error('GAME OBJECT: Continuous audio update failed for ${soundFile!}: $e');
         if (PlatformUtils.shouldUseFireOSMode) {
-          print('🔥 FIRE OS: Continuous audio failed, switching to fallback mode');
+          _logger.fireOS('Continuous audio failed, switching to fallback mode');
           _continuousAudioFailed = true;
         }
       }
@@ -251,9 +258,9 @@ class GameObject extends PositionComponent with CollisionCallbacks {
         final audioManager = AudioManager();
         await audioManager.playSound(soundFile!, volume: volume * 0.3); // Reduced volume for fallback
         
-        print('🔥 FIRE OS FALLBACK: Played one-shot $soundFile at ${(volume * 30).toInt()}% volume');
+        _logger.fireOS('FALLBACK: Played one-shot $soundFile at ${(volume * 30).toInt()}% volume');
       } catch (e) {
-        print('❌ FIRE OS FALLBACK: Even one-shot audio failed for $soundFile: $e');
+        _logger.error('FIRE OS FALLBACK: Even one-shot audio failed for $soundFile: $e');
       }
     }
   }

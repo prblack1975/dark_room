@@ -1,13 +1,18 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
+import '../utils/game_logger.dart';
 
 class WebRealAudioPlayer {
   static final WebRealAudioPlayer _instance = WebRealAudioPlayer._internal();
   factory WebRealAudioPlayer() => _instance;
-  WebRealAudioPlayer._internal();
+  WebRealAudioPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
 
   final Map<String, AudioPlayer> _players = {};
   bool _isInitialized = false;
+  late final GameCategoryLogger _logger;
 
   // Simple audio data URLs (very short beeps)
   static const String _clickSound = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmMeByOU1PXSeSwGJ3nE8N2QQAoUXrTp66hVFApGn+DyvmMeByOU1PXSeSwGJ3nE8N2QQAoUXrTp66hVFAo=';
@@ -21,23 +26,23 @@ class WebRealAudioPlayer {
       final player = AudioPlayer();
       await player.setSource(UrlSource(dataUrl));
       _players[soundName] = player;
-      print('✅ Initialized audio: $soundName');
+      _logger.success('Initialized audio: $soundName');
     } catch (e) {
-      print('❌ Failed to initialize $soundName: $e');
+      _logger.error('Failed to initialize $soundName: $e');
     }
   }
 
   Future<void> _initialize() async {
     if (_isInitialized) return;
     
-    print('🔄 Initializing web audio system...');
+    _logger.process('Initializing web audio system...');
     
     // Initialize all sound players
     await _initializePlayer('click', _clickSound);
     await _initializePlayer('alert', _alertSound);
     
     _isInitialized = true;
-    print('✅ Web audio system ready!');
+    _logger.success('Web audio system ready!');
   }
 
   Future<void> _playSound(String soundName, {double volume = 0.5}) async {
@@ -49,37 +54,37 @@ class WebRealAudioPlayer {
         await player.setVolume(volume);
         await player.seek(Duration.zero);
         await player.resume();
-        print('🔊 Playing: $soundName at ${(volume * 100).toInt()}% volume');
+        _logger.info('🔊 Playing: $soundName at ${(volume * 100).toInt()}% volume');
       } else {
-        print('❌ Sound not found: $soundName');
+        _logger.error('Sound not found: $soundName');
       }
     } catch (e) {
-      print('❌ Audio error: $e');
+      _logger.error('Audio error: $e');
     }
   }
 
   void playCollisionSound() {
-    print('🔊 COLLISION: Wall hit');
+    _logger.info('🔊 COLLISION: Wall hit');
     _playSound('click', volume: 0.4);
   }
 
   void playPickupSound() {
-    print('🔊 PICKUP: Item collected');
+    _logger.info('🔊 PICKUP: Item collected');
     _playSound('alert', volume: 0.3);
   }
 
   void playDoorOpenSound() {
-    print('🔊 DOOR: Opening');
+    _logger.info('🔊 DOOR: Opening');
     _playSound('alert', volume: 0.5);
   }
 
   void playLevelCompleteSound() {
-    print('🔊 SUCCESS: Level complete');
+    _logger.info('🔊 SUCCESS: Level complete');
     _playSound('alert', volume: 0.6);
   }
 
   void playMenuSelectSound() {
-    print('🔊 UI: Menu select');
+    _logger.info('🔊 UI: Menu select');
     _playSound('click', volume: 0.3);
   }
 

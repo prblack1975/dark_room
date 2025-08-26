@@ -1,3 +1,5 @@
+import '../utils/game_logger.dart';
+
 /// Configuration system for Dark Room game UI and settings
 /// 
 /// Features:
@@ -6,9 +8,13 @@
 /// - Persistent settings (future implementation)
 /// - Audio/visual balance configuration
 class SettingsConfig {
+  late final GameCategoryLogger _logger;
   static final SettingsConfig _instance = SettingsConfig._internal();
   factory SettingsConfig() => _instance;
-  SettingsConfig._internal();
+  SettingsConfig._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.ui;
+  }
 
   // UI Visibility Settings
   bool _inventoryDisplayVisible = true;
@@ -47,60 +53,60 @@ class SettingsConfig {
   // Setters for UI visibility
   void setInventoryDisplayVisible(bool visible) {
     _inventoryDisplayVisible = visible;
-    print('⚙️ SETTINGS: Inventory display ${visible ? 'enabled' : 'disabled'}');
+    _logger.info('⚙️ SETTINGS: Inventory display ${visible ? 'enabled' : 'disabled'}');
   }
 
   void setHealthDisplayVisible(bool visible) {
     _healthDisplayVisible = visible;
-    print('⚙️ SETTINGS: Health display ${visible ? 'enabled' : 'disabled'}');
+    _logger.info('⚙️ SETTINGS: Health display ${visible ? 'enabled' : 'disabled'}');
   }
 
   void setDebugInfoVisible(bool visible) {
     _debugInfoVisible = visible;
-    print('⚙️ SETTINGS: Debug info ${visible ? 'enabled' : 'disabled'}');
+    _logger.info('⚙️ SETTINGS: Debug info ${visible ? 'enabled' : 'disabled'}');
   }
 
   void setNarrationTextVisible(bool visible) {
     _narrationTextVisible = visible;
-    print('⚙️ SETTINGS: Narration text ${visible ? 'enabled' : 'disabled'}');
+    _logger.info('⚙️ SETTINGS: Narration text ${visible ? 'enabled' : 'disabled'}');
   }
 
   void setMinimalHUDMode(bool minimal) {
     _minimalHUDMode = minimal;
     _hudOpacity = minimal ? 0.3 : 0.7;
-    print('⚙️ SETTINGS: Minimal HUD mode ${minimal ? 'enabled' : 'disabled'}');
+    _logger.info('⚙️ SETTINGS: Minimal HUD mode ${minimal ? 'enabled' : 'disabled'}');
   }
 
   // Setters for UI styling
   void setHudOpacity(double opacity) {
     _hudOpacity = opacity.clamp(0.1, 1.0);
-    print('⚙️ SETTINGS: HUD opacity set to $_hudOpacity');
+    _logger.info('⚙️ SETTINGS: HUD opacity set to $_hudOpacity');
   }
 
   void setInventoryFontSize(double size) {
     _inventoryFontSize = size.clamp(8.0, 20.0);
-    print('⚙️ SETTINGS: Inventory font size set to $_inventoryFontSize');
+    _logger.info('⚙️ SETTINGS: Inventory font size set to $_inventoryFontSize');
   }
 
   void setNarrationFontSize(double size) {
     _narrationFontSize = size.clamp(10.0, 24.0);
-    print('⚙️ SETTINGS: Narration font size set to $_narrationFontSize');
+    _logger.info('⚙️ SETTINGS: Narration font size set to $_narrationFontSize');
   }
 
   // Setters for audio settings
   void setNarrationEnabled(bool enabled) {
     _narrationEnabled = enabled;
-    print('⚙️ SETTINGS: Narration ${enabled ? 'enabled' : 'disabled'}');
+    _logger.info('⚙️ SETTINGS: Narration ${enabled ? 'enabled' : 'disabled'}');
   }
 
   void setNarrationVolume(double volume) {
     _narrationVolume = volume.clamp(0.0, 1.0);
-    print('⚙️ SETTINGS: Narration volume set to $_narrationVolume');
+    _logger.info('⚙️ SETTINGS: Narration volume set to $_narrationVolume');
   }
 
   void setEnvironmentalAudioVolume(double volume) {
     _environmentalAudioVolume = volume.clamp(0.0, 1.0);
-    print('⚙️ SETTINGS: Environmental audio volume set to $_environmentalAudioVolume');
+    _logger.info('⚙️ SETTINGS: Environmental audio volume set to $_environmentalAudioVolume');
   }
 
   // Toggle methods for easy keyboard shortcuts
@@ -162,10 +168,11 @@ class SettingsConfig {
     _narrationEnabled = true;
     _narrationVolume = 0.8;
     _environmentalAudioVolume = 1.0;
-    print('⚙️ SETTINGS: Reset to defaults');
+    _logger.info('⚙️ SETTINGS: Reset to defaults');
   }
 
   // Future: Save/load settings to persistent storage
-  // void saveSettings() async { /* TODO: Implement persistent storage */ }
-  // void loadSettings() async { /* TODO: Implement persistent storage */ }
+  // Future Enhancement: Implement persistent storage
+  // void saveSettings() async { /* Persistent storage implementation pending */ }
+  // void loadSettings() async { /* Persistent storage implementation pending */ }
 }

@@ -1,46 +1,52 @@
 import 'package:flutter/services.dart';
 import 'dart:async';
+import '../utils/game_logger.dart';
 
 class SystemAudioPlayer {
   static final SystemAudioPlayer _instance = SystemAudioPlayer._internal();
   factory SystemAudioPlayer() => _instance;
-  SystemAudioPlayer._internal();
+  SystemAudioPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
+  
+  late final GameCategoryLogger _logger;
 
   // Use system feedback for audio cues
   Future<void> playSystemFeedback(SystemSoundType sound) async {
     try {
       await SystemSound.play(sound);
     } catch (e) {
-      print('System sound error: $e');
+      _logger.error('System sound error: $e');
     }
   }
 
   void playCollisionSound() {
-    print('🔊 COLLISION: Wall hit');
+    _logger.info('🔊 COLLISION: Wall hit');
     // Use system click sound for collision
     playSystemFeedback(SystemSoundType.click);
   }
 
   void playPickupSound() {
-    print('🔊 PICKUP: Item collected');
+    _logger.info('🔊 PICKUP: Item collected');
     // Use alert sound for pickup
     playSystemFeedback(SystemSoundType.alert);
   }
 
   void playDoorOpenSound() {
-    print('🔊 DOOR: Opening');
+    _logger.info('🔊 DOOR: Opening');
     // Use alert for door opening
     playSystemFeedback(SystemSoundType.alert);
   }
 
   void playLevelCompleteSound() {
-    print('🔊 SUCCESS: Level complete');
+    _logger.info('🔊 SUCCESS: Level complete');
     // Use alert for success
     playSystemFeedback(SystemSoundType.alert);
   }
 
   void playMenuSelectSound() {
-    print('🔊 UI: Menu select');
+    _logger.info('🔊 UI: Menu select');
     // Use click for UI
     playSystemFeedback(SystemSoundType.click);
   }

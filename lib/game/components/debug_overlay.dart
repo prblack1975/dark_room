@@ -97,7 +97,7 @@ class DebugOverlay extends PositionComponent {
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     
-    final angle = player.velocity.angleToSigned(Vector2(1, 0));
+    // final angle = player.velocity.angleToSigned(Vector2(1, 0));  // Reserved for future directional display
     if (player.velocity.length > 0) {
       final endPoint = Offset(
         player.position.x + player.velocity.normalized().x * 20,

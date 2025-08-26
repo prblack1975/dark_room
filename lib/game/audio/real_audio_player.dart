@@ -1,13 +1,18 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
+import '../utils/game_logger.dart';
 
 class RealAudioPlayer {
   static final RealAudioPlayer _instance = RealAudioPlayer._internal();
   factory RealAudioPlayer() => _instance;
-  RealAudioPlayer._internal();
+  RealAudioPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
 
   final AudioPlayer _player = AudioPlayer();
   bool _isInitialized = false;
+  late final GameCategoryLogger _logger;
 
   Future<void> _initialize() async {
     if (_isInitialized) return;
@@ -31,7 +36,7 @@ class RealAudioPlayer {
       ));
       _isInitialized = true;
     } catch (e) {
-      print('Failed to initialize audio: $e');
+      _logger.error('Failed to initialize audio: $e');
     }
   }
 
@@ -46,7 +51,7 @@ class RealAudioPlayer {
       
       // For web, we can try using a simple data URL tone
       // This is a very basic implementation
-      print('🔊 Audio: ${frequency.toInt()}Hz beep for ${durationMs}ms');
+      _logger.info('🔊 Audio: ${frequency.toInt()}Hz beep for ${durationMs}ms');
       
       // Use a simple sound URL or generate one
       // For now, use a silent audio file approach
@@ -59,32 +64,32 @@ class RealAudioPlayer {
       }
       
     } catch (e) {
-      print('Audio error: $e');
+      _logger.error('Audio error: $e');
     }
   }
 
   void playCollisionSound() {
-    print('🔊 COLLISION: Playing thud sound');
+    _logger.info('🔊 COLLISION: Playing thud sound');
     playBeep(frequency: 200.0, durationMs: 150, volume: 0.4);
   }
 
   void playPickupSound() {
-    print('🔊 PICKUP: Playing chime');
+    _logger.info('🔊 PICKUP: Playing chime');
     playBeep(frequency: 1200.0, durationMs: 300, volume: 0.3);
   }
 
   void playDoorOpenSound() {
-    print('🔊 DOOR: Playing creak');
+    _logger.info('🔊 DOOR: Playing creak');
     playBeep(frequency: 300.0, durationMs: 500, volume: 0.4);
   }
 
   void playLevelCompleteSound() {
-    print('🔊 SUCCESS: Playing fanfare');
+    _logger.info('🔊 SUCCESS: Playing fanfare');
     playBeep(frequency: 800.0, durationMs: 600, volume: 0.4);
   }
 
   void playMenuSelectSound() {
-    print('🔊 UI: Playing click');
+    _logger.info('🔊 UI: Playing click');
     playBeep(frequency: 1000.0, durationMs: 100, volume: 0.3);
   }
 

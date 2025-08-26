@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../systems/inventory_system.dart';
+import '../utils/game_logger.dart';
 import 'settings_config.dart';
 
 /// Minimal inventory display component for Dark Room game
@@ -12,6 +13,7 @@ import 'settings_config.dart';
 /// - Non-intrusive corner positioning
 /// - Follows "minimal HUD" aesthetic
 class InventoryDisplay extends Component {
+  late final GameCategoryLogger _logger;
   InventorySystem? _inventorySystem;
   late SettingsConfig _settings;
   late TextPaint _textPaint;
@@ -26,9 +28,11 @@ class InventoryDisplay extends Component {
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.ui;
     _settings = SettingsConfig();
     _initializeTextPaints();
-    print('📋 INVENTORY DISPLAY: Initialized');
+    _logger.info('📋 INVENTORY DISPLAY: Initialized');
   }
   
   void _initializeTextPaints() {
@@ -60,7 +64,7 @@ class InventoryDisplay extends Component {
   void setInventorySystem(InventorySystem inventorySystem) {
     _inventorySystem = inventorySystem;
     _updateDisplayItems();
-    print('📋 INVENTORY DISPLAY: Connected to inventory system');
+    _logger.info('📋 INVENTORY DISPLAY: Connected to inventory system');
   }
   
   /// Update the displayed inventory items
@@ -159,7 +163,7 @@ class InventoryDisplay extends Component {
   /// Update position (for debugging or customization)
   void updatePosition(Vector2 newPosition) {
     _position.setFrom(newPosition);
-    print('📋 INVENTORY DISPLAY: Position updated to $_position');
+    _logger.info('📋 INVENTORY DISPLAY: Position updated to $_position');
   }
   
   /// Get current display bounds (for UI layout calculations)

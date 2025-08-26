@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'dart:async' as async;
+import '../utils/game_logger.dart';
 
 /// Manages text-to-speech narration for the Dark Room game
 /// 
@@ -9,6 +10,7 @@ import 'dart:async' as async;
 /// - Voice narration timing management
 /// - Priority system for important messages
 class NarrationSystem extends Component {
+  late final GameCategoryLogger _logger;
   final List<NarrationItem> _narrationQueue = [];
   bool _isNarrating = false;
   String _currentNarration = '';
@@ -21,7 +23,9 @@ class NarrationSystem extends Component {
   @override
   Future<void> onLoad() async {
     super.onLoad();
-    print('🗣️ NARRATION: System initialized');
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+    _logger.info('🗣️ NARRATION: System initialized');
   }
   
   /// Add narration to the queue
@@ -102,12 +106,12 @@ class NarrationSystem extends Component {
     // Calculate narration duration based on text length
     final duration = _calculateNarrationDuration(item.text);
     
-    print('🗣️ NARRATION: "${item.text}" (${duration.inMilliseconds}ms)');
+    _logger.debug('🗣️ NARRATION: "${item.text}" (${duration.inMilliseconds}ms)');
     
     // Set timer to end narration
     _narrationTimer = async.Timer(duration, _endNarration);
     
-    // TODO: Integrate with actual TTS system when available
+    // Future Enhancement: Integrate with actual TTS system when available
     // For now, we simulate TTS with timing
   }
   
@@ -151,7 +155,7 @@ class NarrationSystem extends Component {
   void clearQueue() {
     _narrationQueue.clear();
     stopNarration();
-    print('🗣️ NARRATION: Queue cleared');
+    _logger.debug('🗣️ NARRATION: Queue cleared');
   }
   
   /// Get current narration status
@@ -191,7 +195,7 @@ class NarrationSystem extends Component {
     
     // Return enhanced base description or create atmospheric fallback
     if (baseDescription.isNotEmpty) {
-      return baseDescription + ' The darkness around you seems to acknowledge your discovery.';
+      return '$baseDescription The darkness around you seems to acknowledge your discovery.';
     } else {
       return 'You sense this item will be important in your escape from this dark place.';
     }

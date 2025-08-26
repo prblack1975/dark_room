@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../systems/level_progress_manager.dart';
+import '../../utils/game_logger.dart';
 import 'level_selection_card.dart';
 
 class MainMenuScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class MainMenuScreen extends StatefulWidget {
 }
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
+  late final GameCategoryLogger _logger;
   final LevelProgressManager _progressManager = LevelProgressManager();
   Map<String, dynamic> _levelData = {};
   bool _loading = true;
@@ -22,6 +24,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   void initState() {
     super.initState();
+    gameLogger.initialize();
+    _logger = gameLogger.ui;
     _loadLevelData();
   }
 
@@ -32,9 +36,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         _levelData = data;
         _loading = false;
       });
-      print('📋 MENU: Loaded level data for ${data.keys.length} levels');
+      _logger.info('📋 MENU: Loaded level data for ${data.keys.length} levels');
     } catch (e) {
-      print('❌ MENU: Error loading level data: $e');
+      _logger.error('MENU: Error loading level data: $e');
       setState(() {
         _loading = false;
       });
@@ -94,7 +98,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   void _onLevelCardTapped(String levelId, Map<String, dynamic> levelInfo) {
     if (levelInfo['unlocked'] as bool) {
-      print('🎯 MENU: Selected level: $levelId');
+      _logger.nav('MENU: Selected level: $levelId');
       widget.onLevelSelected(levelId);
     } else {
       if (mounted) {

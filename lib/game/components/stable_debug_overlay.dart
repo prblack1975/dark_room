@@ -19,7 +19,7 @@ class StableDebugOverlay extends Component {
     // Fill background with semi-transparent black
     canvas.drawRect(
       Rect.fromLTWH(0, 0, gameSize.x, gameSize.y),
-      Paint()..color = Colors.black.withOpacity(0.3),
+      Paint()..color = Colors.black.withValues(alpha: 0.3),
     );
     
     // Draw grid
@@ -34,7 +34,7 @@ class StableDebugOverlay extends Component {
   
   void _drawGrid(Canvas canvas, Vector2 gameSize) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     
@@ -76,7 +76,7 @@ class StableDebugOverlay extends Component {
   
   void _drawWall(Canvas canvas, Wall wall) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(opacity)
+      ..color = Colors.white.withValues(alpha: opacity)
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
     
@@ -93,7 +93,7 @@ class StableDebugOverlay extends Component {
   
   void _drawPlayer(Canvas canvas, Player player) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(opacity)
+      ..color = Colors.white.withValues(alpha: opacity)
       ..style = PaintingStyle.fill;
     
     // Draw player as a circle
@@ -150,7 +150,7 @@ class StableDebugOverlay extends Component {
     }
     
     final paint = Paint()
-      ..color = color.withOpacity(opacity)
+      ..color = color.withValues(alpha: opacity)
       ..style = PaintingStyle.fill;
     
     // Draw filled rectangle
@@ -173,7 +173,7 @@ class StableDebugOverlay extends Component {
         object.size.y,
       ),
       Paint()
-        ..color = Colors.white.withOpacity(opacity)
+        ..color = Colors.white.withValues(alpha: opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0,
     );
@@ -225,7 +225,7 @@ class StableDebugOverlay extends Component {
         text: TextSpan(
           text: instructions[i],
           style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: fontSize,
             fontWeight: FontWeight.normal,
           ),

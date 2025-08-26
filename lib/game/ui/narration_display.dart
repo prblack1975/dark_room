@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../systems/narration_system.dart';
+import '../utils/game_logger.dart';
 import 'settings_config.dart';
 
 /// Text display component for current narration
@@ -12,6 +13,7 @@ import 'settings_config.dart';
 /// - Positioned at bottom of screen
 /// - Follows minimal HUD aesthetic
 class NarrationDisplay extends Component {
+  late final GameCategoryLogger _logger;
   NarrationSystem? _narrationSystem;
   late SettingsConfig _settings;
   late TextPaint _textPaint;
@@ -33,10 +35,12 @@ class NarrationDisplay extends Component {
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.ui;
     _settings = SettingsConfig();
     _position = Vector2(_padding, 500); // Fixed position for now
     _initializeTextPaint();
-    print('🗣️ NARRATION DISPLAY: Initialized');
+    _logger.info('🗣️ NARRATION DISPLAY: Initialized');
   }
   
   void _initializeTextPaint() {
@@ -63,7 +67,7 @@ class NarrationDisplay extends Component {
     _narrationSystem!.onNarrationStart = _onNarrationStart;
     _narrationSystem!.onNarrationEnd = _onNarrationEnd;
     
-    print('🗣️ NARRATION DISPLAY: Connected to narration system');
+    _logger.info('🗣️ NARRATION DISPLAY: Connected to narration system');
   }
   
   void _onNarrationStart(String text) {
@@ -75,7 +79,7 @@ class NarrationDisplay extends Component {
     _textOpacity = 1.0;
     _initializeTextPaint();
     
-    print('🗣️ NARRATION DISPLAY: Showing text: "$text"');
+    _logger.info('🗣️ NARRATION DISPLAY: Showing text: "$text"');
   }
   
   void _onNarrationEnd() {

@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import '../audio/asset_audio_player.dart';
+import '../utils/game_logger.dart';
 import 'narration_system.dart';
 
 /// Manages player inventory for the Dark Room game
@@ -15,6 +16,7 @@ class InventorySystem extends Component {
   final List<String> _items = [];
   final List<String> _pickedUpItemIds = []; // Track unique item IDs to prevent duplicate pickups
   late AssetAudioPlayer _audioPlayer;
+  late final GameCategoryLogger _logger;
   
   // Reference to narration system
   NarrationSystem? _narrationSystem;
@@ -22,6 +24,8 @@ class InventorySystem extends Component {
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.inventory;
     _audioPlayer = AssetAudioPlayer();
   }
   
@@ -43,14 +47,14 @@ class InventorySystem extends Component {
     if (!_items.contains(itemName)) {
       _items.add(itemName);
       _playPickupFeedback(itemName, description, atmosphericDescription);
-      print('📦 INVENTORY: Added item "$itemName" to inventory (Total: ${_items.length})');
+      _logger.pickup('Added item "$itemName" to inventory (Total: ${_items.length})');
     }
   }
   
   /// Remove item from inventory
   void removeItem(String itemName) {
     if (_items.remove(itemName)) {
-      print('📦 INVENTORY: Removed item "$itemName" from inventory (Total: ${_items.length})');
+      _logger.info('📦 INVENTORY: Removed item "$itemName" from inventory (Total: ${_items.length})');
     }
   }
   
@@ -58,7 +62,7 @@ class InventorySystem extends Component {
   void clearInventory() {
     _items.clear();
     _pickedUpItemIds.clear();
-    print('📦 INVENTORY: Cleared all items for new level');
+    _logger.process('INVENTORY: Cleared all items for new level');
   }
   
   /// Track item as picked up to prevent duplicate pickups
@@ -93,7 +97,7 @@ class InventorySystem extends Component {
       final narrationText = useDescription != null && useDescription.isNotEmpty 
           ? 'Picked up $itemName. $useDescription'
           : 'Picked up $itemName';
-      print('🗣️ NARRATION: "$narrationText"');
+      _logger.info('🗣️ NARRATION: "$narrationText"');
     }
   }
   
@@ -107,9 +111,4 @@ class InventorySystem extends Component {
     };
   }
   
-  @override
-  void update(double dt) {
-    super.update(dt);
-    // Inventory system is mostly event-driven, minimal update logic needed
-  }
 }

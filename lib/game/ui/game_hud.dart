@@ -8,6 +8,7 @@ import 'inventory_display.dart';
 import 'narration_display.dart';
 import 'health_display.dart';
 import 'settings_config.dart';
+import '../utils/game_logger.dart';
 
 /// Main HUD component for Dark Room game
 /// 
@@ -18,6 +19,7 @@ import 'settings_config.dart';
 /// - Provides debug UI functionality
 /// - Coordinates between different UI elements
 class GameHUD extends Component {
+  late final GameCategoryLogger _logger;
   late InventoryDisplay inventoryDisplay;
   late NarrationDisplay narrationDisplay;
   late HealthDisplay healthDisplay;
@@ -36,6 +38,8 @@ class GameHUD extends Component {
   Future<void> onLoad() async {
     super.onLoad();
     
+    gameLogger.initialize();
+    _logger = gameLogger.ui;
     settings = SettingsConfig();
     
     // Initialize UI components
@@ -50,7 +54,7 @@ class GameHUD extends Component {
     
     _initializeDebugTextPaint();
     
-    print('🖥️ GAME HUD: Initialized with minimal visibility design');
+    _logger.info('🖥️ GAME HUD: Initialized with minimal visibility design');
   }
   
   void _initializeDebugTextPaint() {
@@ -78,7 +82,7 @@ class GameHUD extends Component {
     narrationDisplay.setNarrationSystem(narrationSystem);
     healthDisplay.setHealthSystem(healthSystem);
     
-    print('🖥️ GAME HUD: Connected to game systems');
+    _logger.info('🖥️ GAME HUD: Connected to game systems');
   }
   
   /// Handle keyboard shortcuts for UI toggles
@@ -125,47 +129,47 @@ class GameHUD extends Component {
   
   void _toggleDebugUI() {
     _showDebugUI = !_showDebugUI;
-    print('🖥️ GAME HUD: Debug UI ${_showDebugUI ? 'enabled' : 'disabled'}');
+    _logger.info('🖥️ GAME HUD: Debug UI ${_showDebugUI ? 'enabled' : 'disabled'}');
   }
   
   /// Debug: Set health to specific value
   void _debugSetHealth(double health) {
     if (_healthSystem == null) {
-      print('⚠️ DEBUG: Health system not available');
+      _logger.warning('Health system not available');
       return;
     }
     
     _healthSystem!.setHealth(health);
-    print('🔧 DEBUG: Set health to ${health.toInt()}');
+    _logger.debug('Set health to ${health.toInt()}', emoji: '🔧');
   }
   
   /// Debug: Take damage
   void _debugTakeDamage(double amount) {
     if (_healthSystem == null) {
-      print('⚠️ DEBUG: Health system not available');
+      _logger.warning('Health system not available');
       return;
     }
     
     _healthSystem!.takeDamage(amount, source: 'debug command');
-    print('🔧 DEBUG: Took ${amount.toInt()} damage');
+    _logger.debug('Took ${amount.toInt()} damage', emoji: '🔧');
   }
   
   /// Debug: Restore health
   void _debugRestoreHealth(double amount) {
     if (_healthSystem == null) {
-      print('⚠️ DEBUG: Health system not available');
+      _logger.warning('Health system not available');
       return;
     }
     
     _healthSystem!.restoreHealth(amount, source: 'debug command');
-    print('🔧 DEBUG: Restored ${amount.toInt()} health');
+    _logger.debug('Restored ${amount.toInt()} health', emoji: '🔧');
   }
   
   void _refreshAllComponents() {
     inventoryDisplay.refresh();
     healthDisplay.refresh();
     // Refresh other components as needed
-    print('🖥️ GAME HUD: Refreshed all components');
+    _logger.info('🖥️ GAME HUD: Refreshed all components');
   }
   
   @override
@@ -284,7 +288,7 @@ class GameHUD extends Component {
   /// Programmatically show narration text (for testing)
   void showTestNarration(String text) {
     narrationDisplay.showText(text);
-    print('🖥️ GAME HUD: Showing test narration: "$text"');
+    _logger.info('🖥️ GAME HUD: Showing test narration: "$text"');
   }
   
   /// Get current UI visibility status
@@ -302,7 +306,7 @@ class GameHUD extends Component {
     // Update component positions based on new size
     narrationDisplay.updatePosition(gameSize: newSize);
     healthDisplay.updatePosition(gameSize: newSize);
-    print('🖥️ GAME HUD: Updated size to $newSize');
+    _logger.info('🖥️ GAME HUD: Updated size to $newSize');
   }
   
   /// Force refresh all UI elements

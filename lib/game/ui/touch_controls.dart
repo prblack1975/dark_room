@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/platform_utils.dart';
 import '../dark_room_game.dart';
+import '../utils/game_logger.dart';
 
 /// Touch controls overlay for mobile and tablet devices
 class TouchControls extends StatefulWidget {
@@ -16,8 +17,16 @@ class TouchControls extends StatefulWidget {
 }
 
 class _TouchControlsState extends State<TouchControls> {
+  late final GameCategoryLogger _logger;
   bool _showControls = true;
   
+  @override
+  void initState() {
+    super.initState();
+    gameLogger.initialize();
+    _logger = gameLogger.ui;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Only show on mobile/tablet devices
@@ -194,11 +203,11 @@ class _TouchControlsState extends State<TouchControls> {
   
   void _handleMovementStart(String direction) {
     widget.game.handleTouchMovement(direction);
-    print('🎮 TOUCH: Movement $direction started');
+    _logger.debug('🎮 TOUCH: Movement $direction started');
   }
   
   void _handleMovementStop() {
     widget.game.stopTouchMovement();
-    print('🎮 TOUCH: Movement stopped');
+    _logger.debug('🎮 TOUCH: Movement stopped');
   }
 }

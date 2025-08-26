@@ -18,6 +18,7 @@ import 'ui/game_hud.dart';
 import 'ui/settings_config.dart';
 import 'audio/audio_manager.dart';
 import 'utils/platform_utils.dart';
+import 'utils/game_logger.dart';
 
 class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasCollisionDetection {
   final VoidCallback? onReturnToMenu;
@@ -31,28 +32,36 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   late SettingsConfig settings;
   late HealthSystem healthSystem;
   
+  // Logger instance for this class
+  late final GameCategoryLogger _logger;
+  
   @override
+  // ignore: overridden_fields
   bool debugMode = false;
   bool isGamePaused = false;
   
   // Touch movement state for mobile devices
-  String? _currentTouchDirection;
+  // String? _currentTouchDirection;  // Reserved for future touch state tracking
   
   // Track initialization state
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
   
   // Test mode support
-  bool _testMode = false;
+  // ignore: unused_field
+  bool _testMode = false; // Will be used for test mode detection
   Vector2? _testPlayerSpawn;
   bool _skipDefaultLevel = false;
   
   DarkRoomGame({this.onReturnToMenu, bool testMode = false, Vector2? testPlayerSpawn}) {
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+    
     if (testMode) {
       _testMode = true;
       _testPlayerSpawn = testPlayerSpawn;
       _skipDefaultLevel = true;
-      print('🧪 GAME: Test mode enabled during construction with spawn: ${testPlayerSpawn ?? 'default'}');
+      _logger.test('Test mode enabled during construction with spawn: ${testPlayerSpawn ?? 'default'}');
     }
   }
   
@@ -61,7 +70,7 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     _testMode = true;
     _testPlayerSpawn = playerSpawn;
     _skipDefaultLevel = true;
-    print('🧪 GAME: Test mode enabled with spawn: ${playerSpawn ?? 'default'}');
+    _logger.test('Test mode enabled with spawn: ${playerSpawn ?? 'default'}');
   }
   
   @override
@@ -100,25 +109,25 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     
     // Mark as initialized
     _isInitialized = true;
-    print('🎮 GAME: DarkRoomGame initialization completed');
+    _logger.success('DarkRoomGame initialization completed');
     
     // Load default MenuLevel unless in test mode
     if (!_skipDefaultLevel) {
       await loadLevel(MenuLevel());
-      print('🎮 GAME: MenuLevel loaded as default level');
+      _logger.info('MenuLevel loaded as default level');
     } else {
-      print('🧪 GAME: Skipping default level load in test mode');
+      _logger.test('Skipping default level load in test mode');
     }
   }
   
   Future<void> loadLevel(Level level) async {
     // Ensure game is fully initialized before loading level
     if (!_isInitialized) {
-      print('❌ GAME: Cannot load level - game not fully initialized');
+      _logger.error('Cannot load level - game not fully initialized');
       return;
     }
     
-    print('🎮 GAME: Starting level load: ${level.name}');
+    _logger.info('Starting level load: ${level.name}');
     
     // Remove previous level if exists
     if (children.whereType<Level>().isNotEmpty) {
@@ -309,15 +318,15 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     if (PlatformUtils.isFireOS || PlatformUtils.shouldUseFireOSMode) {
       // Disable Fire OS mode
       PlatformUtils.disableFireOSTestingMode();
-      print('🔥 FIRE OS: Testing mode disabled');
+      gameLogger.platform.fireOS('Testing mode disabled');
     } else {
       // Enable Fire OS mode
       PlatformUtils.enableFireOSTestingMode();
-      print('🔥 FIRE OS: Testing mode enabled - proximity audio will use Fire tablet optimizations');
+      gameLogger.platform.fireOS('Testing mode enabled - proximity audio will use Fire tablet optimizations');
     }
     
     // Show debug info
-    print(PlatformUtils.detailedPlatformInfo);
+    _logger.info(PlatformUtils.detailedPlatformInfo);
   }
   
   void togglePause() {
@@ -336,7 +345,7 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   
   void loadLevelById(String levelId) {
     if (!_isInitialized) {
-      print('⚠️ GAME: Cannot load level $levelId - game not fully initialized yet');
+      _logger.warning('Cannot load level $levelId - game not fully initialized yet');
       return;
     }
     
@@ -358,17 +367,17 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
         level = OfficeComplexLevel();
         break;
       default:
-        print('❌ GAME: Unknown level ID: $levelId, loading tutorial instead');
+        _logger.error('Unknown level ID: $levelId, loading tutorial instead');
         level = TutorialLevel();
     }
     
-    print('🎮 GAME: Loading level: $levelId');
+    _logger.info('Loading level: $levelId');
     loadLevel(level);
   }
   
   /// Handle touch-based movement for mobile devices
   void handleTouchMovement(String direction) {
-    _currentTouchDirection = direction;
+    // _currentTouchDirection = direction;  // Reserved for future touch state tracking
     
     // Convert touch direction to key set for existing player system
     final touchKeys = <LogicalKeyboardKey>{};
@@ -390,14 +399,14 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     
     // Apply movement to player
     player?.updateMovement(touchKeys);
-    print('🎮 TOUCH: Applied movement $direction');
+    _logger.debug('Touch: Applied movement $direction', emoji: '🎮');
   }
   
   /// Stop touch movement
   void stopTouchMovement() {
-    _currentTouchDirection = null;
+    // _currentTouchDirection = null;  // Reserved for future touch state tracking
     player?.updateMovement(<LogicalKeyboardKey>{});
-    print('🎮 TOUCH: Stopped movement');
+    _logger.debug('Touch: Stopped movement', emoji: '🎮');
   }
   
   @override

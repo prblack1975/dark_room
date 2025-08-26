@@ -5,21 +5,23 @@ import '../utils/line_intersection.dart';
 import 'wall.dart';
 import 'player.dart';
 import 'game_object.dart';
+import '../utils/game_logger.dart';
 
 /// Debug visualization component for wall occlusion calculations
-class WallOcclusionDebug extends Component with HasGameRef {
+class WallOcclusionDebug extends Component with HasGameReference {
+  late final GameCategoryLogger _logger;
   bool isVisible = false;
   late Player? _player;
   List<Wall> _walls = [];
   List<GameObject> _soundSources = [];
   
   final Paint _lineOfSightPaint = Paint()
-    ..color = Colors.green.withOpacity(0.6)
+    ..color = Colors.green.withValues(alpha: 0.6)
     ..strokeWidth = 2.0
     ..style = PaintingStyle.stroke;
     
   final Paint _occludedLinePaint = Paint()
-    ..color = Colors.red.withOpacity(0.6)
+    ..color = Colors.red.withValues(alpha: 0.6)
     ..strokeWidth = 2.0
     ..style = PaintingStyle.stroke;
     
@@ -28,12 +30,19 @@ class WallOcclusionDebug extends Component with HasGameRef {
     ..style = PaintingStyle.fill;
     
   final Paint _wallPaint = Paint()
-    ..color = Colors.blue.withOpacity(0.3)
+    ..color = Colors.blue.withValues(alpha: 0.3)
     ..style = PaintingStyle.fill;
     
   final Paint _soundSourcePaint = Paint()
-    ..color = Colors.purple.withOpacity(0.5)
+    ..color = Colors.purple.withValues(alpha: 0.5)
     ..style = PaintingStyle.fill;
+
+  @override
+  void onLoad() async {
+    super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+  }
 
   @override
   bool get debugMode => true;
@@ -120,7 +129,7 @@ class WallOcclusionDebug extends Component with HasGameRef {
       
       // Draw sound radius
       final radiusPaint = Paint()
-        ..color = Colors.purple.withOpacity(0.1)
+        ..color = Colors.purple.withValues(alpha: 0.1)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
       canvas.drawCircle(
@@ -252,6 +261,6 @@ class WallOcclusionDebug extends Component with HasGameRef {
   /// Toggle debug visualization
   void toggle() {
     isVisible = !isVisible;
-    print('🔧 DEBUG: Wall occlusion debug ${isVisible ? 'ENABLED' : 'DISABLED'}');
+    _logger.debug('🔧 DEBUG: Wall occlusion debug ${isVisible ? 'ENABLED' : 'DISABLED'}');
   }
 }

@@ -9,13 +9,15 @@ import '../systems/inventory_system.dart';
 import '../systems/narration_system.dart';
 import '../systems/health_system.dart';
 import '../systems/level_progress_manager.dart';
+import '../utils/game_logger.dart';
 
-abstract class Level extends Component with HasGameRef<DarkRoomGame> {
+abstract class Level extends Component with HasGameReference<DarkRoomGame> {
   final String name;
   final String description;
   late Vector2 playerSpawn;
   final List<String> inventory = []; // Legacy - kept for compatibility
   late AssetAudioPlayer _audioPlayer;
+  late final GameCategoryLogger _logger;
   
   // New systems for automatic pickup and health
   late InventorySystem inventorySystem;
@@ -46,12 +48,17 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   /// Enable test isolation mode to prevent automatic system connections
   void enableTestIsolation() {
     _testIsolationMode = true;
-    print('🧪 LEVEL: Test isolation enabled for ${name}');
+    // Initialize logger for test scenarios (safe to call multiple times)
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+    _logger.test('LEVEL: Test isolation enabled for $name');
   }
   
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    gameLogger.initialize();
+    _logger = gameLogger.system;
     _audioPlayer = AssetAudioPlayer();
     _levelStartTime = DateTime.now();
     
@@ -70,7 +77,7 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
     await initializeSoundSources();
     // Note: _initializePlayerSystems() is called after player is added to level
     
-    print('⏱️ LEVEL: Started level "$name" at $_levelStartTime');
+    _logger.process('LEVEL: Started level "$name" at $_levelStartTime');
   }
   
   Future<void> initializeSoundSources() async {
@@ -79,10 +86,10 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
       final objectsWithSound = children.whereType<GameObject>()
           .where((obj) => obj.soundFile != null);
       
-      print('🔊 DEBUG: Initializing ${objectsWithSound.length} sound sources for level: $name');
+      _logger.debug('DEBUG: Initializing ${objectsWithSound.length} sound sources for level: $name');
       
       if (objectsWithSound.isEmpty) {
-        print('⚠️ DEBUG: No sound sources found in level');
+        _logger.warning('DEBUG: No sound sources found in level');
         return;
       }
       
@@ -101,18 +108,18 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
             // Immediately start continuous playback for sound sources
             if (soundObject.type == GameObjectType.soundSource) {
               await audioManager.startContinuousSound(soundObject.soundFile!);
-              print('🔊 DEBUG: Started continuous playback for ${soundObject.soundFile!} at position ${soundObject.position}');
+              _logger.debug('DEBUG: Started continuous playback for ${soundObject.soundFile!} at position ${soundObject.position}');
             }
           } catch (e) {
-            print('⚠️ DEBUG: Failed to initialize sound ${soundObject.soundFile!}: $e');
+            _logger.warning('DEBUG: Failed to initialize sound ${soundObject.soundFile!}: $e');
             // Continue with other sounds even if this one fails
           }
         }
       }
       
-      print('🔊 DEBUG: All sound sources initialized and playing for level: $name');
+      _logger.debug('DEBUG: All sound sources initialized and playing for level: $name');
     } catch (e) {
-      print('⚠️ DEBUG: Failed to initialize sound sources for level $name: $e');
+      _logger.warning('DEBUG: Failed to initialize sound sources for level $name: $e');
       // Level can continue without audio in test environments
     }
   }
@@ -155,7 +162,7 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
   /// Initialize player's system references (call after player is added to level)
   Future<void> initializePlayerSystems() async {
     if (_testIsolationMode) {
-      print('🧪 LEVEL: Skipping player system initialization in test isolation mode');
+      _logger.test('LEVEL: Skipping player system initialization in test isolation mode');
       return;
     }
     
@@ -163,9 +170,9 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
     if (player != null) {
       player.setInventorySystem(inventorySystem);
       player.setHealthSystem(healthSystem);
-      print('🎯 LEVEL: Connected player to inventory and health systems');
+      _logger.success('LEVEL: Connected player to inventory and health systems');
     } else {
-      print('⚠️ LEVEL: No player found to connect systems to');
+      _logger.warning('LEVEL: No player found to connect systems to');
     }
   }
   
@@ -203,28 +210,28 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
       case GameObjectType.item:
         // Items are now handled automatically by the player's pickup system
         // This code path should not be reached anymore
-        print('⚠️ WARNING: Item interaction through legacy system - should use automatic pickup');
+        _logger.warning('WARNING: Item interaction through legacy system - should use automatic pickup');
         break;
         
       case GameObjectType.door:
-        print('🚪 DEBUG: Door interaction - ${object.name}, isLocked: ${object.isLocked}, requiredKey: ${object.requiredKey}');
+        _logger.debug('DEBUG: Door interaction - ${object.name}, isLocked: ${object.isLocked}, requiredKey: ${object.requiredKey}');
         
         if (object.isLocked && object.requiredKey != null) {
-          print('🗝️ DEBUG: Checking for key "${object.requiredKey}" in inventory: ${inventorySystem.items}');
+          _logger.debug('DEBUG: Checking for key "${object.requiredKey}" in inventory: ${inventorySystem.items}');
           
           if (inventorySystem.hasItem(object.requiredKey!)) {
-            print('✅ DEBUG: Key found! Unlocking door');
+            _logger.success('DEBUG: Key found! Unlocking door');
             object.isLocked = false;
             narrationSystem.narrateDoorInteraction('The door unlocks with a soft click.');
             _audioPlayer.playDoorOpenSound();
           } else {
-            print('❌ DEBUG: Key not found in inventory');
+            _logger.error('DEBUG: Key not found in inventory');
             narrationSystem.narrateDoorInteraction('The door is locked. You need to find the right key.');
           }
         }
         
         if (!object.isLocked) {
-          print('🎯 DEBUG: Door is unlocked - completing level');
+          _logger.success('DEBUG: Door is unlocked - completing level');
           // Complete the level
           _audioPlayer.playDoorOpenSound();
           narrationSystem.narrateLevelComplete(name);
@@ -240,15 +247,15 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
       case GameObjectType.healthArtifact:
         // Health artifacts are handled automatically by the player's pickup system
         // This code path should not be reached anymore
-        print('⚠️ WARNING: Health artifact interaction through legacy system - should use automatic pickup');
+        _logger.warning('WARNING: Health artifact interaction through legacy system - should use automatic pickup');
         break;
     }
   }
   
   void completeLevel() async {
-    print('🟢 DEBUG: Would play level complete sound (DISABLED)');
+    _logger.debug('DEBUG: Would play level complete sound (DISABLED)');
     // _audioPlayer.playLevelCompleteSound(); // Temporarily disabled for debugging
-    print('Level Complete: $name');
+    _logger.success('Level Complete: $name');
     
     // Save progress data
     final levelId = _getLevelIdFromName(name);
@@ -260,14 +267,14 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
       await progressManager.markLevelCompleted(
         levelId,
         completionTime: completionTime,
-        attempts: 1, // TODO: Track actual attempts
+        attempts: 1, // Implementation Note: Track actual attempts in future release
         healthRemaining: healthRemaining,
       );
       
-      print('💾 LEVEL: Saved completion data for $levelId - Time: ${completionTime.inSeconds}s, Health: ${healthRemaining.toStringAsFixed(1)}%');
+      _logger.success('LEVEL: Saved completion data for $levelId - Time: ${completionTime.inSeconds}s, Health: ${healthRemaining.toStringAsFixed(1)}%');
     }
     
-    gameRef.completeLevel();
+    game.completeLevel();
   }
   
   String? _getLevelIdFromName(String levelName) {
@@ -305,7 +312,7 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
     // Debug logging every 5 seconds (reduced frequency)
     final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     if (currentTime - _lastDebugTime > 5.0) {
-      print('🔊 LEVEL: Updating spatial audio for ${soundSources.length} sound sources, player at ${player.position}');
+      _logger.debug('LEVEL: Updating spatial audio for ${soundSources.length} sound sources, player at ${player.position}');
       _lastDebugTime = currentTime;
     }
     
@@ -313,7 +320,7 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
       // Fire-and-forget async call to avoid blocking the update loop
       // Error handling is done within the GameObject method
       soundSource.updateSpatialAudioWithOcclusion(player.position, walls).catchError((e) {
-        print('❌ LEVEL: Error updating spatial audio for ${soundSource.soundFile}: $e');
+        _logger.error('LEVEL: Error updating spatial audio for ${soundSource.soundFile}: $e');
       });
     }
   }

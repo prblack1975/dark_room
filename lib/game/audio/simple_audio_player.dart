@@ -1,13 +1,18 @@
 import 'dart:async';
+import '../utils/game_logger.dart';
 
 // Simple audio player using procedural sounds for web compatibility
 class SimpleAudioPlayer {
   static final SimpleAudioPlayer _instance = SimpleAudioPlayer._internal();
   factory SimpleAudioPlayer() => _instance;
-  SimpleAudioPlayer._internal();
+  SimpleAudioPlayer._internal() {
+    gameLogger.initialize();
+    _logger = gameLogger.audio;
+  }
 
   Timer? _beepTimer;
   bool _isPlaying = false;
+  late final GameCategoryLogger _logger;
 
   // Play a simple beep sound using procedural generation
   void playBeep({
@@ -18,7 +23,7 @@ class SimpleAudioPlayer {
     if (_isPlaying) return;
     
     _isPlaying = true;
-    print('🔊 BEEP: ${frequency.toInt()}Hz for ${durationMs}ms (Volume: ${(volume * 100).toInt()}%)');
+    _logger.info('🔊 BEEP: ${frequency.toInt()}Hz for ${durationMs}ms (Volume: ${(volume * 100).toInt()}%)');
     
     // Simulate sound duration
     _beepTimer?.cancel();
