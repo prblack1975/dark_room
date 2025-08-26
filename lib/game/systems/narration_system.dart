@@ -10,7 +10,7 @@ import '../utils/game_logger.dart';
 /// - Voice narration timing management
 /// - Priority system for important messages
 class NarrationSystem extends Component {
-  late final GameCategoryLogger _logger;
+  GameCategoryLogger? _logger;
   final List<NarrationItem> _narrationQueue = [];
   bool _isNarrating = false;
   String _currentNarration = '';
@@ -25,7 +25,7 @@ class NarrationSystem extends Component {
     super.onLoad();
     gameLogger.initialize();
     _logger = gameLogger.system;
-    _logger.info('🗣️ NARRATION: System initialized');
+    _logger?.info('🗣️ NARRATION: System initialized');
   }
   
   /// Add narration to the queue
@@ -106,7 +106,7 @@ class NarrationSystem extends Component {
     // Calculate narration duration based on text length
     final duration = _calculateNarrationDuration(item.text);
     
-    _logger.debug('🗣️ NARRATION: "${item.text}" (${duration.inMilliseconds}ms)');
+    _logger?.debug('🗣️ NARRATION: "${item.text}" (${duration.inMilliseconds}ms)');
     
     // Set timer to end narration
     _narrationTimer = async.Timer(duration, _endNarration);
@@ -155,7 +155,7 @@ class NarrationSystem extends Component {
   void clearQueue() {
     _narrationQueue.clear();
     stopNarration();
-    _logger.debug('🗣️ NARRATION: Queue cleared');
+    _logger?.debug('🗣️ NARRATION: Queue cleared');
   }
   
   /// Get current narration status
