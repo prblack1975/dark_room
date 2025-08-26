@@ -15,6 +15,22 @@ The game embraces complete visual deprivation as a core mechanic:
 - **Primary Screen**: Completely black during gameplay
 - **UI Elements**: Minimal HUD showing only health, inventory, and navigation controls. These should be in a dark grey, almost not visible. Health and inventory are configurable.
 - **Menu/Progress Screens**: Traditional visual interfaces between levels
+- **Debug Mode**: Optional visual overlay for development and accessibility
+
+### Debug Mode Configuration
+A toggleable debug visualization mode for development, testing, and accessibility:
+- **Toggle Method**: Settings menu option or keyboard shortcut (F3 or D key)
+- **Visual Style**: Minimalist wireframe representation
+- **Display Elements**:
+  - **Player**: Simple white square or circle
+  - **Walls**: White lines showing room boundaries
+  - **Objects**: Colored boxes (green = items, yellow = interactables, blue = doors)
+  - **NPCs**: Red squares/triangles with direction indicators
+  - **Sound Sources**: Pulsing circles showing audio range
+  - **Grid**: Optional grid overlay for position reference
+- **Resolution**: Deliberately low-fi, retro-style graphics (think 1980s vector displays)
+- **Transparency**: Semi-transparent overlay allowing darkness to remain visible
+- **Performance**: Minimal rendering overhead to maintain audio focus
 
 ## Gameplay Mechanics
 
@@ -27,21 +43,23 @@ The game embraces complete visual deprivation as a core mechanic:
 
 ### Audio System (Core Gameplay)
 - **3D Directional Audio**: Full spatial audio with headphone support
-- **Distance-based Volume**: Objects get louder as player approaches
-- **Audio Range Design**: Environmental sounds heard only when relatively close, with exceptions for specific long-range objects
+- **Always-Playing Sound Sources**: Sound sources continuously play their audio loops at their location
+- **Proximity-Based Volume**: All sounds get louder as player approaches, quieter as they move away
+- **Wall and Room Attenuation**: Walls and separate rooms reduce sound volume and add muffling effects
+- **Variable Sound Ranges**: Not all sounds extend throughout the entire room - each has its own effective radius
 - **Sound Categories**:
-  - **Environmental**: Object sounds, ambient room tone (close-range detection)
-  - **Long-range Objects**: Special objects audible across entire room
-  - Large mechanical devices (generators, ventilation systems)
-  - Water features (dripping, flowing water)
-  - Musical/tonal objects (wind chimes, music boxes)
-  - Emergency systems (alarms, beeping devices)
-  - Radio broadcasts (music, static, voices)
-  - **Interactive**: Pickup sounds, door mechanisms, key insertion
-  - **NPC Audio**: Breathing, footsteps, vocalizations
-  - **Feedback**: Collision sounds, inventory notifications
-  - **Narration**: Character voice describing found items
-  - **Health Artifacts**: Distinctive audio signatures for healing items
+  - **Environmental Sound Sources**: Continuously playing location-based sounds
+    - Small objects (close-range: ~100 units) - music boxes, clocks, small appliances
+    - Medium objects (medium-range: ~200 units) - fans, computers, larger machinery
+    - Large objects (long-range: ~400+ units) - generators, ventilation systems, water features
+    - Radio/broadcast sources - music, static, voices (medium to long-range depending on power)
+  - **Interactive Audio**: Triggered by player actions
+    - Pickup sounds, door mechanisms, key insertion
+    - Collision sounds with walls and objects
+  - **NPC Audio**: Dynamic positional audio from moving entities
+    - Breathing, footsteps, vocalizations that follow NPC positions
+  - **UI Feedback**: Inventory notifications, health status changes
+  - **Narration**: Character voice describing found items and situations
 
 ### Collision & Physics
 - **Wall Detection**: Audio/haptic feedback when hitting boundaries. When about to hit the wall, sound gets extra echo-y
@@ -145,6 +163,8 @@ The game embraces complete visual deprivation as a core mechanic:
 - **Level Select**: Traditional visual interface showing progress
 - **Statistics Screen**: Post-level completion stats
 - **Settings**: Audio settings, control customization, accessibility options
+  - **Debug Mode Toggle**: Enable/disable visual map overlay
+  - **Debug Display Options**: Configure which elements to show (grid, sound ranges, etc.)
 
 ## Technical Architecture
 
@@ -216,8 +236,16 @@ The game embraces complete visual deprivation as a core mechanic:
 - **Collaborative Puzzles**: Multi-player specific objectives requiring coordination
 - **Architecture Preparation**: Current single-player design considers future multiplayer expansion
 
-### Remaining Design Questions
-1. **Long-Range Objects**: Which specific objects should be audible across entire room?
+### Sound Design Implementation Notes
+- **Always-On Audio**: Sound sources never stop playing - they continuously loop their audio at their fixed positions
+- **Distance Attenuation**: Volume decreases with distance using realistic 3D audio curves
+- **Wall Occlusion**: Walls between player and sound source reduce volume and add low-pass filtering (muffled effect)
+- **Room Separation**: Sounds from adjacent rooms are significantly quieter and more muffled
+- **Sound Radius Categories**:
+  - **Close-range (50-100 units)**: Small personal items, desk objects, small electronics
+  - **Medium-range (150-250 units)**: Appliances, moderate machinery, musical instruments  
+  - **Long-range (300-500+ units)**: Industrial equipment, HVAC systems, major water features
+- **No Manual Activation**: Players never manually turn sounds on/off - all interaction is automatic based on proximity
 
 ## Success Metrics
 - **Player Retention**: Level completion rates

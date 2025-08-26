@@ -1,122 +1,160 @@
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'game/dark_room_game.dart';
+import 'game/ui/menu/main_menu_screen.dart';
+import 'game/ui/touch_controls.dart';
+import 'game/utils/game_logger.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const DarkRoomApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class DarkRoomApp extends StatelessWidget {
+  const DarkRoomApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Dark Room',
+      theme: ThemeData.dark(),
+      debugShowCheckedModeBanner: false,
+      home: const GameNavigator(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class GameNavigator extends StatefulWidget {
+  const GameNavigator({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<GameNavigator> createState() => _GameNavigatorState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _GameNavigatorState extends State<GameNavigator> {
+  late final GameCategoryLogger _logger;
+  bool _showingMenu = true;
+  DarkRoomGame? _game;
+  String? _currentLevelId;
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+  }
+
+  void _onLevelSelected(String levelId) {
+    _logger.debug('🎯 NAVIGATOR: Starting level: $levelId');
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _currentLevelId = levelId;
+      _showingMenu = false;
+      _game = DarkRoomGame(onReturnToMenu: _returnToMenu);
+    });
+  }
+
+  void _returnToMenu() {
+    _logger.debug('🔙 NAVIGATOR: Returning to menu');
+    setState(() {
+      _showingMenu = true;
+      _game = null;
+      _currentLevelId = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+    if (_showingMenu) {
+      return MainMenuScreen(onLevelSelected: _onLevelSelected);
+    } else {
+      return GameScreen(
+        game: _game!,
+        levelId: _currentLevelId!,
+        onReturnToMenu: _returnToMenu,
+      );
+    }
+  }
+}
+
+class GameScreen extends StatefulWidget {
+  final DarkRoomGame game;
+  final String levelId;
+  final VoidCallback onReturnToMenu;
+
+  const GameScreen({
+    super.key,
+    required this.game,
+    required this.levelId,
+    required this.onReturnToMenu,
+  });
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  late final GameCategoryLogger _logger;
+
+  @override
+  void initState() {
+    super.initState();
+    gameLogger.initialize();
+    _logger = gameLogger.system;
+    _waitForGameAndLoadLevel();
+  }
+
+  void _waitForGameAndLoadLevel() {
+    // Check if game is ready, if not, wait and retry
+    if (widget.game.isInitialized) {
+      _loadSelectedLevel();
+    } else {
+      _logger.debug('⏳ SCREEN: Waiting for game initialization...');
+      // Wait for next frame and check again
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _waitForGameAndLoadLevel();
+        }
+      });
+    }
+  }
+
+  void _loadSelectedLevel() {
+    _logger.debug('🎯 SCREEN: Game ready, loading level ${widget.levelId}');
+    widget.game.loadLevelById(widget.levelId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) => widget.onReturnToMenu(),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            GameWidget(game: widget.game),
+            Positioned(
+              top: 40,
+              left: 16,
+              child: SafeArea(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white70),
+                    onPressed: widget.onReturnToMenu,
+                    tooltip: 'Return to Menu',
+                  ),
+                ),
+              ),
             ),
+            // Touch controls overlay for mobile/tablet
+            TouchControls(game: widget.game),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
