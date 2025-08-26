@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import 'dart:math' as math;
 import '../components/wall.dart';
 import '../utils/line_intersection.dart';
+import '../utils/platform_utils.dart';
 import 'asset_audio_player.dart';
 
 class AudioManager {
@@ -19,6 +20,11 @@ class AudioManager {
   
   /// Check if running in test mode
   bool get isTestMode => _testInstance != null;
+  
+  /// Check if a sound is currently playing continuously
+  bool isContinuouslyPlaying(String soundName) {
+    return _isContinuousPlaying[soundName] ?? false;
+  }
 
   final Map<String, AudioPlayer?> _players = {};  // Allow null players for failed loads
   final Map<String, bool> _isLooping = {};
@@ -41,6 +47,11 @@ class AudioManager {
       return;
     }
     
+    // Enhanced logging for Fire OS
+    if (PlatformUtils.isFireOS) {
+      print('🔥 FIRE OS: Preloading sound $soundName from $assetPath (loop: $loop)');
+    }
+    
     try {
       // Try to create AudioPlayer - this can throw synchronous exceptions
       AudioPlayer? player;
@@ -53,8 +64,15 @@ class AudioManager {
         }
         
         _players[soundName] = player;
+        
+        if (PlatformUtils.isFireOS) {
+          print('✅ FIRE OS: Successfully preloaded $soundName');
+        }
       } catch (e) {
         print('Failed to create/configure AudioPlayer for $soundName: $e');
+        if (PlatformUtils.isFireOS) {
+          print('❌ FIRE OS: AudioPlayer creation failed for $soundName - this will limit fallback audio');
+        }
         // Store null player but keep the sound registered for game logic
         _players[soundName] = null;
       }
@@ -62,10 +80,35 @@ class AudioManager {
       _isLooping[soundName] = loop;
     } catch (e) {
       print('Failed to load audio: $soundName from $assetPath - $e');
+      if (PlatformUtils.isFireOS) {
+        print('❌ FIRE OS: Complete preload failure for $soundName');
+      }
       // Store null player but maintain sound registration for game logic
       _players[soundName] = null;
       _isLooping[soundName] = loop;
     }
+  }
+  
+  /// Preload sounds commonly used for Fire OS fallback mode
+  Future<void> preloadFireOSFallbackSounds() async {
+    if (!PlatformUtils.isFireOS) return;
+    
+    print('🔥 FIRE OS: Preloading fallback sounds...');
+    
+    final fallbackSounds = [
+      'click.mp3',
+      'wall_hit.mp3',
+      'pickup.mp3',
+      'wall-hit-1-100717.mp3',
+      'wall-hit-cartoon.mp3',
+      'key-get-39925.mp3',
+    ];
+    
+    for (final soundFile in fallbackSounds) {
+      await preloadSound(soundFile, 'audio/interaction/$soundFile');
+    }
+    
+    print('✅ FIRE OS: Fallback sounds preloading completed');
   }
 
   Future<void> playSound(String soundName, {double volume = 1.0}) async {
@@ -389,8 +432,8 @@ class AudioManager {
       // Note: AudioPlayer doesn't have built-in balance control
       // In a full implementation, we'd use a more advanced audio library
       // For MVP, we'll just adjust volume based on balance
-      final leftVolume = balance < 0 ? 1.0 : (1.0 - balance);
-      final rightVolume = balance > 0 ? 1.0 : (1.0 + balance);
+      // final leftVolume = balance < 0 ? 1.0 : (1.0 - balance);  // For future stereo implementation
+      // final rightVolume = balance > 0 ? 1.0 : (1.0 + balance); // For future stereo implementation
       // This is a simplified approach - in production we'd need proper stereo control
     }
   }

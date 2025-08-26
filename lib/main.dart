@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'game/dark_room_game.dart';
 import 'game/ui/menu/main_menu_screen.dart';
+import 'game/ui/touch_controls.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -113,7 +114,7 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (_) => widget.onReturnToMenu(),
+      onPopInvokedWithResult: (didPop, result) => widget.onReturnToMenu(),
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
@@ -125,7 +126,7 @@ class _GameScreenState extends State<GameScreen> {
               child: SafeArea(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
@@ -136,6 +137,8 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
             ),
+            // Touch controls overlay for mobile/tablet
+            TouchControls(game: widget.game),
           ],
         ),
       ),

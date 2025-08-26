@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import '../audio/audio_manager.dart';
+import '../utils/platform_utils.dart';
 import 'wall.dart';
 
 enum GameObjectType {
@@ -38,6 +39,12 @@ class GameObject extends PositionComponent with CollisionCallbacks {
   // Performance optimization: throttle audio updates
   double _lastAudioUpdateTime = 0.0;
   static const double _audioUpdateInterval = 1.0 / 30.0; // Update at 30 Hz instead of 60 Hz
+  
+  // Fire OS fallback system for when continuous audio fails
+  bool _continuousAudioFailed = false;
+  double _lastFallbackSoundTime = 0.0;
+  double _fallbackSoundInterval = 2.0; // Play fallback sounds every 2 seconds when close
+  double _lastProximityVolume = 0.0;
   
   GameObject({
     required this.type,
@@ -152,36 +159,102 @@ class GameObject extends PositionComponent with CollisionCallbacks {
   }
   
   /// Update spatial audio with wall occlusion calculations
-  /// Includes performance throttling to reduce CPU usage
-  void updateSpatialAudioWithOcclusion(Vector2 playerPosition, List<Wall> walls) {
+  /// Includes performance throttling to reduce CPU usage and Fire OS fallback
+  Future<void> updateSpatialAudioWithOcclusion(Vector2 playerPosition, List<Wall> walls) async {
     if (type != GameObjectType.soundSource || soundFile == null) return;
     
     final audioManager = AudioManager();
+    final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     
-    // Initialize continuous audio if not already done
+    // Check if continuous audio needs initialization
+    // Note: Level may have already initialized this during level load
     if (!_hasInitializedAudio) {
-      audioManager.startContinuousSound(soundFile!);
-      _hasInitializedAudio = true;
-      print('🔊 DEBUG: Initialized continuous audio for ${soundFile!} at ${position}');
+      // Check if AudioManager already has this sound playing
+      final isAlreadyPlaying = audioManager.isContinuouslyPlaying(soundFile!);
+      
+      if (isAlreadyPlaying) {
+        print('🔊 GAME OBJECT: Audio for ${soundFile!} already initialized by Level');
+        _hasInitializedAudio = true;
+      } else {
+        try {
+          print('🔊 GAME OBJECT: Level did not initialize ${soundFile!}, initializing now');
+          await audioManager.startContinuousSound(soundFile!);
+          _hasInitializedAudio = true;
+          print('✅ GAME OBJECT: Successfully initialized continuous audio for ${soundFile!}');
+        } catch (e) {
+          print('❌ GAME OBJECT: Failed to initialize continuous audio for ${soundFile!}: $e');
+          if (PlatformUtils.shouldUseFireOSMode) {
+            print('🔥 FIRE OS: Marking continuous audio as failed, enabling fallback mode');
+            _continuousAudioFailed = true;
+          }
+          _hasInitializedAudio = true; // Don't keep retrying
+        }
+      }
     }
     
     // Throttle audio updates for performance (30 Hz instead of 60 Hz)
-    final currentTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     if (currentTime - _lastAudioUpdateTime < _audioUpdateInterval) {
       return;
     }
     _lastAudioUpdateTime = currentTime;
     
-    // Update volume with wall occlusion effects
+    // Calculate spatial audio data
     final soundPosition = position + size / 2;
-    
-    // Update volume with wall occlusion effects
-    audioManager.updateContinuousSoundVolumeWithOcclusion(
-      soundFile!,
-      playerPosition,
-      soundPosition,
+    final spatialData = audioManager.calculate3DAudioWithOcclusion(
+      playerPosition, 
+      soundPosition, 
       walls,
       maxDistance: soundRadius,
     );
+    
+    // Store volume for fallback system
+    _lastProximityVolume = spatialData.volume;
+    
+    // Try continuous audio first
+    if (!_continuousAudioFailed) {
+      try {
+        await audioManager.updateContinuousSoundVolumeWithOcclusion(
+          soundFile!,
+          playerPosition,
+          soundPosition,
+          walls,
+          maxDistance: soundRadius,
+        );
+      } catch (e) {
+        print('❌ GAME OBJECT: Continuous audio update failed for ${soundFile!}: $e');
+        if (PlatformUtils.shouldUseFireOSMode) {
+          print('🔥 FIRE OS: Continuous audio failed, switching to fallback mode');
+          _continuousAudioFailed = true;
+        }
+      }
+    }
+    
+    // Fire OS fallback: periodic one-shot sounds when continuous audio fails
+    if (_continuousAudioFailed && PlatformUtils.shouldUseFireOSMode) {
+      await _handleFireOSAudioFallback(currentTime, spatialData.volume);
+    }
+  }
+  
+  /// Handle Fire OS audio fallback with periodic one-shot sounds
+  Future<void> _handleFireOSAudioFallback(double currentTime, double volume) async {
+    // Only play fallback sounds when volume is significant
+    if (volume < 0.1) return;
+    
+    // Adjust interval based on volume (closer = more frequent)
+    final dynamicInterval = _fallbackSoundInterval * (1.0 - volume * 0.5);
+    
+    if (currentTime - _lastFallbackSoundTime >= dynamicInterval) {
+      _lastFallbackSoundTime = currentTime;
+      
+      try {
+        // Play a one-shot version of the sound
+        final audioManager = AudioManager();
+        await audioManager.playSound(soundFile!, volume: volume * 0.3); // Reduced volume for fallback
+        
+        print('🔥 FIRE OS FALLBACK: Played one-shot $soundFile at ${(volume * 30).toInt()}% volume');
+      } catch (e) {
+        print('❌ FIRE OS FALLBACK: Even one-shot audio failed for $soundFile: $e');
+      }
+    }
   }
 }

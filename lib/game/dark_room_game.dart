@@ -16,6 +16,8 @@ import 'levels/office_complex_level.dart';
 import 'systems/health_system.dart';
 import 'ui/game_hud.dart';
 import 'ui/settings_config.dart';
+import 'audio/audio_manager.dart';
+import 'utils/platform_utils.dart';
 
 class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasCollisionDetection {
   final VoidCallback? onReturnToMenu;
@@ -32,6 +34,9 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
   @override
   bool debugMode = false;
   bool isGamePaused = false;
+  
+  // Touch movement state for mobile devices
+  String? _currentTouchDirection;
   
   // Track initialization state
   bool _isInitialized = false;
@@ -72,6 +77,10 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     // Initialize health system first
     healthSystem = HealthSystem();
     await add(healthSystem);
+    
+    // Preload Fire OS fallback sounds if needed
+    final audioManager = AudioManager();
+    await audioManager.preloadFireOSFallbackSounds();
     
     // Initialize player with test spawn position if specified
     final spawnPosition = _testPlayerSpawn ?? Vector2(400, 300);
@@ -264,6 +273,12 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
         return KeyEventResult.handled;
       }
       
+      // Toggle Fire OS testing mode with F5 key
+      if (keysPressed.contains(LogicalKeyboardKey.f5)) {
+        _toggleFireOSTestingMode();
+        return KeyEventResult.handled;
+      }
+      
     }
     
     // Pass movement keys to player
@@ -288,6 +303,21 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
         }
       }
     }
+  }
+  
+  void _toggleFireOSTestingMode() {
+    if (PlatformUtils.isFireOS || PlatformUtils.shouldUseFireOSMode) {
+      // Disable Fire OS mode
+      PlatformUtils.disableFireOSTestingMode();
+      print('🔥 FIRE OS: Testing mode disabled');
+    } else {
+      // Enable Fire OS mode
+      PlatformUtils.enableFireOSTestingMode();
+      print('🔥 FIRE OS: Testing mode enabled - proximity audio will use Fire tablet optimizations');
+    }
+    
+    // Show debug info
+    print(PlatformUtils.detailedPlatformInfo);
   }
   
   void togglePause() {
@@ -334,6 +364,40 @@ class DarkRoomGame extends FlameGame with HasKeyboardHandlerComponents, HasColli
     
     print('🎮 GAME: Loading level: $levelId');
     loadLevel(level);
+  }
+  
+  /// Handle touch-based movement for mobile devices
+  void handleTouchMovement(String direction) {
+    _currentTouchDirection = direction;
+    
+    // Convert touch direction to key set for existing player system
+    final touchKeys = <LogicalKeyboardKey>{};
+    
+    switch (direction.toLowerCase()) {
+      case 'up':
+        touchKeys.add(LogicalKeyboardKey.keyW);
+        break;
+      case 'down':
+        touchKeys.add(LogicalKeyboardKey.keyS);
+        break;
+      case 'left':
+        touchKeys.add(LogicalKeyboardKey.keyA);
+        break;
+      case 'right':
+        touchKeys.add(LogicalKeyboardKey.keyD);
+        break;
+    }
+    
+    // Apply movement to player
+    player?.updateMovement(touchKeys);
+    print('🎮 TOUCH: Applied movement $direction');
+  }
+  
+  /// Stop touch movement
+  void stopTouchMovement() {
+    _currentTouchDirection = null;
+    player?.updateMovement(<LogicalKeyboardKey>{});
+    print('🎮 TOUCH: Stopped movement');
   }
   
   @override

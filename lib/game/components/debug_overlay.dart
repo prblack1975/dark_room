@@ -36,7 +36,7 @@ class DebugOverlay extends PositionComponent {
   
   void _drawGrid(Canvas canvas) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
+      ..color = Colors.white.withValues(alpha: 0.1)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     
@@ -64,7 +64,7 @@ class DebugOverlay extends PositionComponent {
   
   void _drawWall(Canvas canvas, Wall wall) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(opacity)
+      ..color = Colors.white.withValues(alpha: opacity)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     
@@ -81,7 +81,7 @@ class DebugOverlay extends PositionComponent {
   
   void _drawPlayer(Canvas canvas, Player player) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(opacity * 1.5)
+      ..color = Colors.white.withValues(alpha: opacity * 1.5)
       ..style = PaintingStyle.fill;
     
     // Draw player as a circle
@@ -93,7 +93,7 @@ class DebugOverlay extends PositionComponent {
     
     // Draw direction indicator
     final directionPaint = Paint()
-      ..color = Colors.yellow.withOpacity(opacity)
+      ..color = Colors.yellow.withValues(alpha: opacity)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     
@@ -118,27 +118,27 @@ class DebugOverlay extends PositionComponent {
     switch (object.type) {
       case GameObjectType.item:
         paint = Paint()
-          ..color = Colors.green.withOpacity(opacity)
+          ..color = Colors.green.withValues(alpha: opacity)
           ..style = PaintingStyle.fill;
         break;
       case GameObjectType.healthArtifact:
         paint = Paint()
-          ..color = Colors.red.withOpacity(opacity)
+          ..color = Colors.red.withValues(alpha: opacity)
           ..style = PaintingStyle.fill;
         break;
       case GameObjectType.door:
         paint = Paint()
-          ..color = Colors.blue.withOpacity(opacity)
+          ..color = Colors.blue.withValues(alpha: opacity)
           ..style = PaintingStyle.fill;
         break;
       case GameObjectType.interactable:
         paint = Paint()
-          ..color = Colors.yellow.withOpacity(opacity)
+          ..color = Colors.yellow.withValues(alpha: opacity)
           ..style = PaintingStyle.fill;
         break;
       case GameObjectType.soundSource:
         paint = Paint()
-          ..color = Colors.purple.withOpacity(opacity)
+          ..color = Colors.purple.withValues(alpha: opacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0;
         
@@ -169,7 +169,7 @@ class DebugOverlay extends PositionComponent {
       text: TextSpan(
         text: object.type.name,
         style: TextStyle(
-          color: Colors.white.withOpacity(opacity),
+          color: Colors.white.withValues(alpha: opacity),
           fontSize: 10,
         ),
       ),
@@ -205,7 +205,7 @@ class DebugOverlay extends PositionComponent {
       text: TextSpan(
         text: info,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.7),
+          color: Colors.white.withValues(alpha: 0.7),
           fontSize: 14,
         ),
       ),

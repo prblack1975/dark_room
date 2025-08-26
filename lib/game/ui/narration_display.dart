@@ -21,7 +21,7 @@ class NarrationDisplay extends Component {
   bool _isShowing = false;
   
   // Animation properties
-  double _fadeSpeed = 2.0; // Opacity units per second
+  final double _fadeSpeed = 2.0; // Opacity units per second
   double _maxDisplayTime = 8.0; // Maximum time to show text in seconds
   double _displayTimer = 0.0;
   

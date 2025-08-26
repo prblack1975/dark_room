@@ -56,7 +56,7 @@ class GameHUD extends Component {
   void _initializeDebugTextPaint() {
     _debugTextPaint = TextPaint(
       style: TextStyle(
-        color: Colors.yellow.withOpacity(0.8),
+        color: Colors.yellow.withValues(alpha: 0.8),
         fontSize: 10,
         fontFamily: 'monospace',
       ),

@@ -20,7 +20,7 @@ class HealthDisplay extends Component {
   
   // Health display state
   double _currentHealth = 100.0;
-  double _maxHealth = 100.0;
+  final double _maxHealth = 100.0;
   bool _isCritical = false;
   
   // Reference to systems
@@ -48,7 +48,7 @@ class HealthDisplay extends Component {
   void _initializePaints() {
     // Health bar background (very subtle)
     _healthBarBackground = Paint()
-      ..color = Colors.black.withOpacity(0.6)
+      ..color = Colors.black.withValues(alpha: 0.6)
       ..style = PaintingStyle.fill;
     
     // Health bar fill (changes color based on health)
@@ -57,14 +57,14 @@ class HealthDisplay extends Component {
     
     // Critical health warning paint
     _criticalHealthPaint = Paint()
-      ..color = Colors.red.withOpacity(0.8)
+      ..color = Colors.red.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     
     // Health text paint (minimal)
     _healthTextPaint = TextPaint(
       style: TextStyle(
-        color: Colors.white.withOpacity(0.7),
+        color: Colors.white.withValues(alpha: 0.7),
         fontSize: 11,
         fontFamily: 'monospace',
         fontWeight: FontWeight.w300,
@@ -74,7 +74,7 @@ class HealthDisplay extends Component {
     // Critical health text paint
     _criticalTextPaint = TextPaint(
       style: TextStyle(
-        color: Colors.red.withOpacity(0.9),
+        color: Colors.red.withValues(alpha: 0.9),
         fontSize: 11,
         fontFamily: 'monospace',
         fontWeight: FontWeight.bold,
@@ -118,16 +118,16 @@ class HealthDisplay extends Component {
     Color healthColor;
     if (healthPercentage > 0.75) {
       // High health - green
-      healthColor = Colors.green.withOpacity(0.7);
+      healthColor = Colors.green.withValues(alpha: 0.7);
     } else if (healthPercentage > 0.5) {
       // Medium health - yellow
-      healthColor = Colors.yellow.withOpacity(0.7);
+      healthColor = Colors.yellow.withValues(alpha: 0.7);
     } else if (healthPercentage > 0.25) {
       // Low health - orange
-      healthColor = Colors.orange.withOpacity(0.7);
+      healthColor = Colors.orange.withValues(alpha: 0.7);
     } else {
       // Critical health - red
-      healthColor = Colors.red.withOpacity(0.8);
+      healthColor = Colors.red.withValues(alpha: 0.8);
     }
     
     _healthBarFill.color = healthColor;
@@ -185,7 +185,7 @@ class HealthDisplay extends Component {
       _barSize.y,
     );
     
-    _healthBarBackground.color = _healthBarBackground.color.withOpacity(opacity * 0.6);
+    _healthBarBackground.color = _healthBarBackground.color.withValues(alpha: opacity * 0.6);
     canvas.drawRect(backgroundRect, _healthBarBackground);
     
     // Health fill bar
@@ -200,13 +200,13 @@ class HealthDisplay extends Component {
         _barSize.y,
       );
       
-      _healthBarFill.color = _healthBarFill.color.withOpacity(opacity);
+      _healthBarFill.color = _healthBarFill.color.withValues(alpha: opacity);
       canvas.drawRect(fillRect, _healthBarFill);
     }
     
     // Border (very subtle)
     final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(opacity * 0.3)
+      ..color = Colors.white.withValues(alpha: opacity * 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     

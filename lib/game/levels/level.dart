@@ -310,7 +310,11 @@ abstract class Level extends Component with HasGameRef<DarkRoomGame> {
     }
     
     for (final soundSource in soundSources) {
-      soundSource.updateSpatialAudioWithOcclusion(player.position, walls);
+      // Fire-and-forget async call to avoid blocking the update loop
+      // Error handling is done within the GameObject method
+      soundSource.updateSpatialAudioWithOcclusion(player.position, walls).catchError((e) {
+        print('❌ LEVEL: Error updating spatial audio for ${soundSource.soundFile}: $e');
+      });
     }
   }
   

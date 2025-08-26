@@ -38,7 +38,8 @@ class StableDebugOverlay extends Component {
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     
-    const gridSize = 50.0;
+    // Scale grid size based on screen size for better tablet visibility
+    final gridSize = gameSize.x > 800 ? 75.0 : 50.0;
     
     // Vertical lines
     for (double x = 0; x <= gameSize.x; x += gridSize) {
@@ -202,9 +203,10 @@ class StableDebugOverlay extends Component {
   
   void _drawInstructions(Canvas canvas) {
     final instructions = [
-      'DEBUG MODE - Press F3 to toggle',
-      'WASD/Arrows: Move around',
-      'ESC/M: Return to menu',
+      'DEBUG MODE - Map/Touch controls visible',
+      'Use touch controls or WASD/Arrows to move',
+      'Tap map icon to toggle debug view',
+      'F5: Toggle Fire tablet audio mode',
       'Walk near objects to interact',
       '',
       'WHITE LINES: Walls',
@@ -214,13 +216,17 @@ class StableDebugOverlay extends Component {
       'WHITE CIRCLE (P): You (Player)',
     ];
     
+    final gameSize = findGame()?.size ?? Vector2(800, 600);
+    final fontSize = gameSize.x > 800 ? 14.0 : 12.0;
+    final lineHeight = gameSize.x > 800 ? 18.0 : 16.0;
+    
     for (int i = 0; i < instructions.length; i++) {
       final textPainter = TextPainter(
         text: TextSpan(
           text: instructions[i],
           style: TextStyle(
             color: Colors.white.withOpacity(0.9),
-            fontSize: 12,
+            fontSize: fontSize,
             fontWeight: FontWeight.normal,
           ),
         ),
@@ -228,7 +234,7 @@ class StableDebugOverlay extends Component {
       );
       
       textPainter.layout();
-      textPainter.paint(canvas, Offset(10, 10 + (i * 16)));
+      textPainter.paint(canvas, Offset(10, 10 + (i * lineHeight)));
     }
   }
 }

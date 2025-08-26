@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dark_room/game/ui/settings_config.dart';
-import 'package:dark_room/game/systems/narration_system.dart';
 
 void main() {
   group('Settings Configuration Tests', () {

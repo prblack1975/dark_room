@@ -147,8 +147,8 @@ void main() {
         await game.ensureAdd(player);
         await game.ensureAdd(wall);
         
-        // Store initial position
-        final initialPosition = player.position.clone();
+        // Store initial position for collision test
+        player.position.clone();
         
         // Move player towards wall
         player.updateMovement({LogicalKeyboardKey.keyD});

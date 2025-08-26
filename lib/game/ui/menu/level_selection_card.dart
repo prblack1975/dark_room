@@ -68,7 +68,7 @@ class LevelSelectionCard extends StatelessWidget {
               Text(
                 description,
                 style: TextStyle(
-                  color: _getTextColor(isUnlocked).withOpacity(0.8),
+                  color: _getTextColor(isUnlocked).withValues(alpha: 0.8),
                   fontSize: 14,
                   height: 1.3,
                 ),
@@ -78,9 +78,9 @@ class LevelSelectionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.2),
+                    color: Colors.orange.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
                   ),
                   child: const Text(
                     'LOCKED - Complete previous level to unlock',
@@ -105,14 +105,14 @@ class LevelSelectionCard extends StatelessWidget {
 
   Color _getCardColor(bool isCompleted, bool isUnlocked) {
     if (!isUnlocked) return Colors.grey[850]!;
-    if (isCompleted) return Colors.green.withOpacity(0.1);
+    if (isCompleted) return Colors.green.withValues(alpha: 0.1);
     return Colors.grey[800]!;
   }
 
   Color _getBorderColor(bool isCompleted, bool isUnlocked) {
     if (!isUnlocked) return Colors.grey[600]!;
     if (isCompleted) return Colors.green;
-    return Colors.blue.withOpacity(0.5);
+    return Colors.blue.withValues(alpha: 0.5);
   }
 
   Color _getTextColor(bool isUnlocked) {
@@ -164,13 +164,13 @@ class LevelSelectionCard extends StatelessWidget {
     }
 
     if (!isUnlocked) {
-      chipColor = chipColor.withOpacity(0.3);
+      chipColor = chipColor.withValues(alpha: 0.3);
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.2),
+        color: chipColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: chipColor),
       ),
@@ -196,9 +196,9 @@ class LevelSelectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.2),
+        color: Colors.blue.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.5)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

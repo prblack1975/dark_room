@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:dark_room/game/dark_room_game.dart';
 import 'package:dark_room/game/audio/audio_manager.dart';
@@ -20,7 +19,6 @@ class TestDarkRoomGame extends DarkRoomGame {
   }
   
   /// Override the audio manager getter to return our mock
-  @override
   AudioManager get audioManager => mockAudioManager;
 }
 

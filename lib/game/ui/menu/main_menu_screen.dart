@@ -219,7 +219,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   onTap: () => _onLevelCardTapped(levelId, levelInfo),
                 ),
               );
-            }).toList(),
+            }),
             const SizedBox(height: 32),
             Center(
               child: Container(
